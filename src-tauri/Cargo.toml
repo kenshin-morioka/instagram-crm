@@ -3,6 +3,7 @@ name = "instagram-crm"
 version = "1.0.0"
 description = "Instagramリールのコメントへ自動で定型文を返信する常駐アプリ"
 edition = "2021"
+license = "MIT"
 
 [lib]
 name = "instagram_crm_lib"
