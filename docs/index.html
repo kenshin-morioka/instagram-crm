@@ -290,17 +290,18 @@
     gap: 14px;
   }
   .safety li {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
+    position: relative;
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 16px 18px;
+    padding: 16px 18px 16px 52px;
+    overflow-wrap: anywhere;
   }
   .safety li::before {
     content: "✓";
-    flex-shrink: 0;
+    position: absolute;
+    left: 18px;
+    top: 18px;
     width: 22px;
     height: 22px;
     border-radius: 50%;
