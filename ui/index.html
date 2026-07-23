@@ -37,6 +37,11 @@
           <span id="status-dot" class="dot"></span>
           <span id="status-text">確認中...</span>
           <span id="paused-badge" class="badge badge-warn" hidden>送信停止中</span>
+          <span id="issue-badge" class="badge badge-warn" hidden>接続エラー (自動再試行中)</span>
+        </p>
+        <p id="issue-hint" class="hint" hidden>
+          Instagramとの通信に連続して失敗しています。ネットワーク接続を確認してください。
+          接続が回復すれば自動で再開します。
         </p>
         <p class="btn-row">
           <button id="pause-button" class="btn btn-small" hidden>送信を一時停止</button>
@@ -135,9 +140,59 @@
         </div>
       </section>
 
+      <section class="card">
+        <div class="card-label">
+          取得範囲
+          <button id="fetch-help" class="help-icon" aria-label="取得範囲とは">?</button>
+        </div>
+        <p id="fetch-hint" class="hint" hidden>
+          毎回のチェックで「最近のリール何件」の「何時間前までのコメント」を確認するかの設定です。
+          リール数を増やすと古い投稿へのコメントにも反応できますが、Instagram APIの利用量が増えます。
+          対象期間より古いコメントには返信しません
+          (ポーリング間隔より短くすると取りこぼすため、間隔より長くしてください)。
+          迷ったら初期値 (10件・24時間) のままでOKです。
+        </p>
+        <div class="interval-row">
+          <span class="interval-field">
+            <span class="unit">最近のリール</span>
+            <input
+              id="fetch-limit"
+              type="number"
+              min="1"
+              max="25"
+              step="1"
+              aria-label="対象リール数"
+            />
+            <span class="unit">件</span>
+          </span>
+          <span class="interval-field">
+            <span class="unit">過去</span>
+            <input
+              id="lookback-hours"
+              type="number"
+              min="1"
+              max="168"
+              step="1"
+              aria-label="コメント対象期間 (時間)"
+            />
+            <span class="unit">時間</span>
+          </span>
+          <button id="save-fetch" class="btn">保存</button>
+        </div>
+      </section>
+
       <section class="card last-run-card">
-        <div class="card-label">最終実行</div>
+        <div class="card-label">実行状況</div>
+        <p id="progress-line" class="progress-line" hidden>
+          <span class="spinner" aria-hidden="true"></span>
+          <span id="progress-text"></span>
+        </p>
+        <p id="truncated-note" class="hint warn-note" hidden>
+          ⚠️ コメントが多く、直近の確認では一部を確認しきれていない可能性があります
+          (次回のチェックで続きを確認します)
+        </p>
         <p id="last-run" class="last-run">-</p>
+        <p id="cycle-summary" class="last-run" hidden></p>
       </section>
 
       <footer class="app-footer">

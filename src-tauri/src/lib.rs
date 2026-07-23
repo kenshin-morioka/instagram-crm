@@ -74,6 +74,7 @@ pub fn run() {
             commands::get_settings,
             commands::save_reply_text,
             commands::save_polling_interval,
+            commands::save_fetch_settings,
             commands::set_dry_run,
             commands::set_sending_paused,
             commands::connect_with_token,

@@ -15,6 +15,17 @@ const ERROR_CODE_OAUTH: i64 = 190;
 /// (4: アプリ制限, 17: ユーザー制限, 32: ページ制限, 613: カスタム制限)
 const RATE_LIMIT_ERROR_CODES: [i64; 4] = [4, 17, 32, 613];
 
+/// コメント取得で追う最大ページ数 (50件/ページ → 最大200件/メディア/周期)。
+/// 上限なしだとコメント総数の多いリールで毎周期のAPI消費が爆発するため打ち切る
+const MAX_COMMENT_PAGES: usize = 4;
+
+/// fetch_commentsの結果。truncated=trueならページ上限で打ち切られている
+#[derive(Debug)]
+pub struct CommentsPage {
+    pub comments: Vec<Comment>,
+    pub truncated: bool,
+}
+
 /// タイムアウトを設定したHTTPクライアントを生成する。
 /// 全体タイムアウトがないとハング時にポーリングが無期限停止し、
 /// 「タイムアウト→結果不明」の二重返信防止も機能しないため必須
@@ -149,29 +160,49 @@ impl InstagramClient {
         Ok(envelope.data)
     }
 
-    /// メディアに付いたトップレベルコメントを取得する
+    /// メディアに付いたトップレベルコメントを取得する。
+    /// 50件を超える場合はページを追い、MAX_COMMENT_PAGESで打ち切る
+    /// (コメント総数の多いリールで毎周期のAPI消費が際限なく増えるのを防ぐ)。
+    /// truncated=trueなら上限で打ち切られており、未取得のコメントが残っている
     pub async fn fetch_comments(
         &self,
         access_token: &str,
         media_id: &str,
-    ) -> AppResult<Vec<Comment>> {
-        let response = self
-            .http
-            .get(format!("{}/{}/comments", self.base, media_id))
-            .query(&[("fields", "id,text,timestamp,from"), ("limit", "50")])
-            .bearer_auth(access_token)
-            .send()
-            .await?;
-        let envelope: Envelope<Comment> = self.parse_response(response).await?;
-        if envelope.paging.and_then(|p| p.next).is_some() {
-            // MVPでは1ページ (50件) のみ処理する。溢れた分は次回以降のポーリングで
-            // 拾えないため、頻発するようならページネーション対応が必要
-            log::warn!(
-                "media_id={} のコメントが50件を超えています。超過分は処理されません",
-                media_id
-            );
+    ) -> AppResult<CommentsPage> {
+        let mut comments: Vec<Comment> = Vec::new();
+        let mut next_url: Option<String> = None;
+
+        for page in 0..MAX_COMMENT_PAGES {
+            let request = match &next_url {
+                // paging.nextはGraph APIが返す完全なURL (クエリ込み) をそのまま使う
+                Some(url) => self.http.get(url),
+                None => self
+                    .http
+                    .get(format!("{}/{}/comments", self.base, media_id))
+                    .query(&[("fields", "id,text,timestamp,from"), ("limit", "50")]),
+            };
+            let response = request.bearer_auth(access_token).send().await?;
+            let envelope: Envelope<Comment> = self.parse_response(response).await?;
+            comments.extend(envelope.data);
+
+            next_url = envelope.paging.and_then(|p| p.next);
+            if next_url.is_none() {
+                break;
+            }
+            if page + 1 == MAX_COMMENT_PAGES {
+                log::warn!(
+                    "media_id={} のコメントが{}ページ ({}件) を超えています。超過分はこの周期では処理されません",
+                    media_id,
+                    MAX_COMMENT_PAGES,
+                    comments.len()
+                );
+            }
         }
-        Ok(envelope.data)
+
+        Ok(CommentsPage {
+            comments,
+            truncated: next_url.is_some(),
+        })
     }
 
     /// コメントに付いた返信一覧を取得する (再送前の二重返信チェック用)

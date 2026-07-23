@@ -412,7 +412,7 @@ input[type="number"]:focus {
   box-shadow: 0 6px 18px rgba(238, 42, 123, 0.4);
 }
 
-/* ---------- last run ---------- */
+/* ---------- 実行状況 ---------- */
 
 .last-run-card {
   padding-block: 14px;
@@ -420,9 +420,47 @@ input[type="number"]:focus {
 
 .last-run {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
   color: var(--text-sub);
+}
+
+.last-run + .last-run {
+  margin-top: 4px;
+}
+
+.progress-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.progress-line[hidden] {
+  display: none;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid rgba(238, 42, 123, 0.25);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.warn-note {
+  color: var(--warn);
 }
 
 /* ---------- footer ---------- */
