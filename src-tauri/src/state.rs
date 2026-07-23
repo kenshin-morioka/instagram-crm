@@ -5,8 +5,12 @@ use crate::config::AppConfig;
 use crate::db::{keys, Db};
 use crate::models::{ConnectionStatus, TokenInfo};
 
-pub const MIN_POLLING_INTERVAL_SECS: u64 = 10;
-pub const MAX_POLLING_INTERVAL_SECS: u64 = 3600;
+/// 下限を30秒にしているのは、Instagram Graph APIのレート制限
+/// (アプリ・アカウント単位の時間あたり呼び出し数) に達しにくくするため
+pub const MIN_POLLING_INTERVAL_SECS: u64 = 30;
+/// 上限を12時間にしているのは、コメントの返信対象が直近24時間
+/// (comment_lookback_hours) のため、それを超える間隔だと取りこぼすから
+pub const MAX_POLLING_INTERVAL_SECS: u64 = 12 * 60 * 60;
 
 pub struct AppState {
     pub config: AppConfig,

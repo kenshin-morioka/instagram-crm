@@ -86,18 +86,24 @@
           新しいコメントが付いていないか、Instagramへ確認しに行く間隔です。
           たとえば30秒なら、30秒ごとに新着コメントをチェックして自動返信します。
           短くするほど返信は速くなりますが、Instagram APIの利用量が増えます。
+          APIのレート制限を避けるため、30秒より短くはできません
+          (上限は12時間。それより間隔を空けると古いコメントが返信対象外になります)。
           迷ったら30秒のままでOKです。
         </p>
         <div class="interval-row">
           <input
             id="polling-interval"
             type="number"
-            min="10"
-            max="3600"
-            step="1"
-            aria-label="ポーリング間隔 (秒)"
+            min="30"
+            max="43200"
+            step="10"
+            aria-label="ポーリング間隔"
           />
-          <span class="unit">秒</span>
+          <select id="polling-unit" aria-label="ポーリング間隔の単位">
+            <option value="1">秒</option>
+            <option value="60">分</option>
+            <option value="3600">時間</option>
+          </select>
           <button id="save-interval" class="btn">保存</button>
         </div>
       </section>
