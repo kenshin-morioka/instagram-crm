@@ -30,7 +30,7 @@
 2. ダウンロードしたファイルをダブルクリックし、画面の指示に従ってインストールします
 3. 起動時に「WindowsによってPCが保護されました」と表示される場合は、**「詳細情報」→「実行」** の順にクリックしてください（初回のみ）
 
-> ⚠️ 上記の警告は、アプリに有償の署名証明書を付けていないために表示されるものです。表示が不安な場合は、下記の「開発者向け: ソースからビルドする」の方法で自分でビルドすることもできます。
+> ⚠️ 上記の警告は、アプリに有償の署名証明書を付けていないために表示されるものです。表示が不安な場合は、[CONTRIBUTING.md](CONTRIBUTING.md) の手順で自分でビルドすることもできます。
 
 ---
 
@@ -100,29 +100,9 @@
 
 ---
 
-## 4. 開発者向け: ソースからビルドする
+## 4. 開発者向け
 
-配布版を使わず自分でビルドしたい場合や、開発に参加する場合は以下の通りです。[Rust](https://www.rust-lang.org/) と [Node.js](https://nodejs.org/) が必要です。
-
-```sh
-# 開発時の起動
-cd src-tauri
-cargo run
-
-# 配布用アプリのビルド
-npx @tauri-apps/cli build
-# → macOS: src-tauri/target/release/bundle/dmg/ 以下
-# → Windows: src-tauri/target/release/bundle/msi/ 以下
-```
-
-テストの実行（実 API への送信は行わず、すべてローカルで完結します）:
-
-```sh
-cd src-tauri
-cargo test
-```
-
-設計方針は [doc/design_doc.md](doc/design_doc.md) を参照してください。
+配布版を使わず自分でビルドしたい場合や、開発に参加する場合は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
 ---
 
