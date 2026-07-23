@@ -1,12 +1,21 @@
 # Meta Platform 準拠監査 (COMPLIANCE_AUDIT)
 
 監査日: 2026-07-23
-対象: instagram-crm (Rust / Tauri 2 デスクトップ常駐アプリ)
+対象: instagram-crm (Rust / Tauri 2 デスクトップ常駐アプリ) — コミット `54c36ac` 時点の自作コード
 
 ## 結論
 
-**非公式API・ブラウザ自動化・スクレイピング・認証情報の不正利用は一切存在しない。**
-全ての外向き通信は Meta 公式の Instagram Platform API (`graph.instagram.com`) のみ。
+**対象コードの静的レビュー範囲では、非公式API・ブラウザ自動化・スクレイピング・
+認証情報の不正利用は確認されなかった。**
+自作コードが行う外向き通信は Meta 公式の Instagram Platform API (`graph.instagram.com`) のみ。
+
+### 監査の方法と限界
+
+- 方法: 自作コード (`src-tauri/src/`, `ui/`) の目視レビュー + 禁止事項キーワードの文字列スキャン (後述)
+- 限界:
+  - 依存クレート (Cargo.lock 記載) の内部実装までは監査していない
+  - 実行時の外向き通信のパケットキャプチャ等による動的検証は行っていない
+  - 本監査以降のコード変更は対象外 (変更時は再確認が必要)
 
 ## 現状の構成
 
@@ -25,9 +34,12 @@
 
 ## 禁止事項スキャン結果
 
+自作コード全体への `grep -ri` による文字列スキャン (依存クレートの実装は対象外):
+
 `selenium` / `playwright` / `puppeteer` / `instagrapi` / `instagram_private_api` /
 `sessionid` / `csrftoken` / `instagram.com/api/v1` / `graphql/query` / `query_hash` /
-`proxy rotation` / `captcha` / `device fingerprint` — **全て検出なし**。
+`proxy rotation` / `captcha` / `device fingerprint` — **上記キーワードはいずれも検出なし**
+(キーワードに現れない手法まで否定するものではない)。
 
 `password` の一致は keyring crate のAPI名 (`set_password`/`get_password` = OSキーチェーン操作) と
 トークン入力欄のマスク表示 (`type="password"`) のみで、Instagramパスワードの取り扱いは存在しない。

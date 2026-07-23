@@ -5,14 +5,16 @@ DB: `~/Library/Application Support/com.kenshinmorioka.instagram-crm/app.db`
 
 ## kill switch (緊急停止)
 
-- 停止: アプリ画面の **「送信を一時停止」** を押す (即時。以降の周期は送信・取得ともスキップ)
+- 停止: アプリ画面の **「送信を一時停止」** を押す (押した後の新規送信は行われない。
+  送信処理中の1件のみ完了まで実行される。以降の周期は送信・取得ともスキップ)
 - 再開: 同じボタン (「送信を再開」)
 - UIが操作できない場合: `sqlite3 app.db "UPDATE settings SET value='true' WHERE key='sending_paused';"` → アプリ再起動不要 (次周期から反映)
 - 最終手段: トレイの Quit でアプリ自体を終了
 
 ## HTTP 429 (Rate Limit) が出た場合
 
-- 自動対応: Retry-After尊重 + 指数バックオフ (最大で通常間隔の8倍) で自動回復する
+- 自動対応: 指数バックオフ (最大で通常間隔の8倍) で自動回復する。
+  `Retry-After` は待機時間の下限として尊重するため、それが8倍を超える場合はその秒数まで待つ
 - 頻発する場合: `polling_interval_secs` を延ばす / `media_fetch_limit` を減らす
 - API使用量が `usage_pause_threshold_pct` (既定90%) を超えると送信は自動停止する
 

@@ -62,7 +62,11 @@ impl AppConfig {
         if !self
             .meta_graph_api_version
             .strip_prefix('v')
-            .is_some_and(|v| v.chars().all(|c| c.is_ascii_digit() || c == '.'))
+            .is_some_and(|v| {
+                // "v" や "v." のような空/数字なし始まりを弾く (base URLが壊れて全API失敗するため)
+                v.starts_with(|c: char| c.is_ascii_digit())
+                    && v.chars().all(|c| c.is_ascii_digit() || c == '.')
+            })
         {
             return Err(AppError::Config(format!(
                 "meta_graph_api_version '{}' が不正です (例: v25.0)",
@@ -170,7 +174,7 @@ mod tests {
 
     #[test]
     fn rejects_invalid_api_version() {
-        for bad in ["latest", "25.0", "vlatest", ""] {
+        for bad in ["latest", "25.0", "vlatest", "", "v", "v.", "v..", "v.25"] {
             let config = AppConfig {
                 meta_graph_api_version: bad.into(),
                 ..AppConfig::default()
