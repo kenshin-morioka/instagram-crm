@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      tauri: ${{ steps.filter.outputs.tauri }}
+      ui: ${{ steps.filter.outputs.ui }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            tauri:
+              - 'src-tauri/**'
+            ui:
+              - 'ui/**'
+
+  rust-test:
+    needs: changes
+    if: needs.changes.outputs.tauri == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: cargo test
+        working-directory: src-tauri
+        run: cargo test --all
+
+  ui-check:
+    needs: changes
+    if: needs.changes.outputs.ui == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: JS syntax check
+        run: node --check ui/main.js
+
+  # 単一の必須ステータスチェック。always() で必ず実行され、
+  # 上流ジョブが skipped (対象パス未変更) の場合は通過、
+  # failure / cancelled の場合は失敗させてマージをブロックする。
+  ci:
+    needs: [changes, rust-test, ui-check]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify upstream jobs
+        run: |
+          results="${{ needs.changes.result }} ${{ needs.rust-test.result }} ${{ needs.ui-check.result }}"
+          echo "job results: $results"
+          for r in $results; do
+            if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then
+              echo "::error::A required job did not succeed."
+              exit 1
+            fi
+          done
+          echo "All required jobs succeeded (or were skipped)."
