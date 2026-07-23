@@ -313,28 +313,26 @@ input[type="number"]:focus {
 .interval-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
-.interval-row input {
-  width: 90px;
+.interval-field {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.interval-field input {
+  width: 62px;
   text-align: right;
+  padding-inline: 8px;
 }
 
-.interval-row select {
-  padding: 10px 8px;
-  border: 1px solid var(--input-border);
-  border-radius: 10px;
-  background: var(--input-bg);
-  color: var(--text);
-  font: inherit;
-  font-size: 14px;
-}
-
-.interval-row select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(238, 42, 123, 0.15);
+.interval-field .unit {
+  color: var(--text-sub);
+  font-size: 13px;
+  flex: none;
 }
 
 .interval-row .btn {
