@@ -24,6 +24,13 @@
         </div>
       </header>
 
+      <div id="update-banner" class="update-banner" hidden>
+        <span id="update-text">新しいバージョンが利用できます</span>
+        <button id="update-button" class="btn btn-small btn-gradient">
+          最新バージョンをインストール
+        </button>
+      </div>
+
       <section class="card status-card">
         <div class="card-label">接続状態</div>
         <p id="status-line" aria-live="polite">
@@ -132,6 +139,10 @@
         <div class="card-label">最終実行</div>
         <p id="last-run" class="last-run">-</p>
       </section>
+
+      <footer class="app-footer">
+        <span id="app-version"></span>
+      </footer>
     </main>
 
     <p id="message" class="toast" role="status" aria-live="polite" hidden></p>

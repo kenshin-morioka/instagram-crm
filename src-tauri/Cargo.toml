@@ -1,8 +1,9 @@
 [package]
 name = "instagram-crm"
-version = "0.1.0"
+version = "1.0.0"
 description = "Instagramリールのコメントへ自動で定型文を返信する常駐アプリ"
 edition = "2021"
+license = "MIT"
 
 [lib]
 name = "instagram_crm_lib"
@@ -14,6 +15,8 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-log = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "sync"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 serde = { version = "1", features = ["derive"] }

@@ -1,4 +1,7 @@
 const { invoke } = window.__TAURI__.core;
+const { getVersion } = window.__TAURI__.app;
+const { check: checkUpdate } = window.__TAURI__.updater;
+const { relaunch } = window.__TAURI__.process;
 
 const statusDot = document.getElementById("status-dot");
 const statusText = document.getElementById("status-text");
@@ -20,6 +23,10 @@ const lastRun = document.getElementById("last-run");
 const pollingHelp = document.getElementById("polling-help");
 const pollingHint = document.getElementById("polling-hint");
 const message = document.getElementById("message");
+const appVersion = document.getElementById("app-version");
+const updateBanner = document.getElementById("update-banner");
+const updateText = document.getElementById("update-text");
+const updateButton = document.getElementById("update-button");
 
 const STATUS_VIEW = {
   connected: { text: "接続済み", dotClass: "connected", showConnect: false },
@@ -189,6 +196,48 @@ saveInterval.addEventListener("click", async () => {
   }
 });
 
+// ---------- アップデート ----------
+
+let pendingUpdate = null;
+
+async function checkForUpdate() {
+  // ダウンロード中・案内表示中は再チェックしない
+  if (pendingUpdate) return;
+  try {
+    const update = await checkUpdate();
+    if (!update) return;
+    pendingUpdate = update;
+    updateText.textContent = `新しいバージョン v${update.version} が利用できます`;
+    updateBanner.hidden = false;
+  } catch (e) {
+    // オフライン時やGitHub障害時は次回のチェックに任せて黙って続行する
+    console.error("アップデート確認に失敗:", e);
+  }
+}
+
+updateButton.addEventListener("click", async () => {
+  if (!pendingUpdate) return;
+  updateButton.disabled = true;
+  updateButton.textContent = "ダウンロード中...";
+  try {
+    await pendingUpdate.downloadAndInstall();
+    await relaunch();
+  } catch (e) {
+    showMessage(`アップデートに失敗しました: ${e}`);
+    updateButton.disabled = false;
+    updateButton.textContent = "最新バージョンをインストール";
+  }
+});
+
+getVersion()
+  .then((v) => {
+    appVersion.textContent = `Instagram CRM v${v}`;
+  })
+  .catch((e) => console.error(e));
+
 loadSettings().catch((e) => showMessage(String(e)));
 refreshStatus();
 setInterval(refreshStatus, 5000);
+checkForUpdate();
+// 常駐アプリのため起動時だけでなく6時間ごとにも確認する
+setInterval(checkForUpdate, 6 * 60 * 60 * 1000);
