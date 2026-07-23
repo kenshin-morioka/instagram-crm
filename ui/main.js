@@ -27,6 +27,9 @@ const appVersion = document.getElementById("app-version");
 const updateBanner = document.getElementById("update-banner");
 const updateText = document.getElementById("update-text");
 const updateButton = document.getElementById("update-button");
+const termsOverlay = document.getElementById("terms-overlay");
+const termsCheckbox = document.getElementById("terms-checkbox");
+const termsAccept = document.getElementById("terms-accept");
 
 const STATUS_VIEW = {
   connected: { text: "接続済み", dotClass: "connected", showConnect: false },
@@ -235,6 +238,31 @@ getVersion()
   })
   .catch((e) => console.error(e));
 
+termsCheckbox.addEventListener("change", () => {
+  termsAccept.disabled = !termsCheckbox.checked;
+});
+
+termsAccept.addEventListener("click", async () => {
+  try {
+    await invoke("accept_terms");
+    termsOverlay.hidden = true;
+  } catch (e) {
+    showMessage(String(e));
+  }
+});
+
+// 未同意なら同意ダイアログでUI全体を覆う。判定に失敗した場合も未同意扱い (安全側)
+async function showTermsIfNeeded() {
+  try {
+    const accepted = await invoke("get_terms_accepted");
+    termsOverlay.hidden = accepted;
+  } catch (e) {
+    console.error(e);
+    termsOverlay.hidden = false;
+  }
+}
+
+showTermsIfNeeded();
 loadSettings().catch((e) => showMessage(String(e)));
 refreshStatus();
 setInterval(refreshStatus, 5000);

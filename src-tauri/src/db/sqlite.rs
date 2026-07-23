@@ -14,6 +14,8 @@ pub mod keys {
     pub const SENDING_PAUSED: &str = "sending_paused";
     /// ドライラン: UIから切り替えた値。未設定なら設定ファイルの初期値を使う
     pub const DRY_RUN: &str = "dry_run";
+    /// 初回起動時の利用条件への同意日時 (RFC 3339)。未設定なら未同意
+    pub const TERMS_ACCEPTED_AT: &str = "terms_accepted_at";
 }
 
 /// 返信処理の状態

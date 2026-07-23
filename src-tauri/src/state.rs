@@ -118,6 +118,19 @@ impl AppState {
         self.db
             .set_setting(keys::DRY_RUN, if enabled { "true" } else { "false" })
     }
+
+    /// 初回起動時の利用条件に同意済みか。値が読めない場合は未同意扱い (安全側)
+    pub fn terms_accepted(&self) -> bool {
+        self.db
+            .get_setting(keys::TERMS_ACCEPTED_AT)
+            .ok()
+            .flatten()
+            .is_some_and(|v| !v.trim().is_empty())
+    }
+
+    pub fn set_terms_accepted(&self, accepted_at: &str) -> crate::error::AppResult<()> {
+        self.db.set_setting(keys::TERMS_ACCEPTED_AT, accepted_at)
+    }
 }
 
 #[cfg(test)]
@@ -264,6 +277,21 @@ mod tests {
         let state = state_with(None);
         state.db.set_setting(keys::DRY_RUN, "yes").unwrap();
         assert!(state.dry_run());
+    }
+
+    #[test]
+    fn terms_accepted_defaults_to_false_and_persists() {
+        let state = state_with(None);
+        assert!(!state.terms_accepted(), "初期状態は未同意であること");
+        state.set_terms_accepted("2026-07-24T00:00:00Z").unwrap();
+        assert!(state.terms_accepted());
+    }
+
+    #[test]
+    fn terms_accepted_treats_blank_value_as_not_accepted() {
+        let state = state_with(None);
+        state.db.set_setting(keys::TERMS_ACCEPTED_AT, "  ").unwrap();
+        assert!(!state.terms_accepted());
     }
 
     #[test]

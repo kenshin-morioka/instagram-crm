@@ -69,6 +69,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::get_status,
+            commands::get_terms_accepted,
+            commands::accept_terms,
             commands::get_settings,
             commands::save_reply_text,
             commands::save_polling_interval,
