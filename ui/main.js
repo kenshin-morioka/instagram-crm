@@ -2,6 +2,7 @@ const { invoke } = window.__TAURI__.core;
 const { getVersion } = window.__TAURI__.app;
 const { check: checkUpdate } = window.__TAURI__.updater;
 const { relaunch } = window.__TAURI__.process;
+const { openUrl } = window.__TAURI__.opener;
 
 const statusDot = document.getElementById("status-dot");
 const statusText = document.getElementById("status-text");
@@ -208,6 +209,19 @@ const replyHelp = document.getElementById("reply-help");
 const replyHint = document.getElementById("reply-hint");
 replyHelp.addEventListener("click", () => {
   replyHint.hidden = !replyHint.hidden;
+});
+
+const tokenHelp = document.getElementById("token-help");
+const tokenHint = document.getElementById("token-hint");
+tokenHelp.addEventListener("click", () => {
+  tokenHint.hidden = !tokenHint.hidden;
+});
+
+const setupGuideLink = document.getElementById("setup-guide-link");
+setupGuideLink.addEventListener("click", (event) => {
+  // WebView内で遷移させず既定ブラウザで開く
+  event.preventDefault();
+  openUrl(setupGuideLink.href).catch((e) => showMessage(String(e)));
 });
 
 // バックエンドの上下限 (state.rs の定数) と同じ値

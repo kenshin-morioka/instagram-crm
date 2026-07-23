@@ -317,6 +317,10 @@ main {
   margin-bottom: 0;
 }
 
+.hint a {
+  color: var(--accent);
+}
+
 /* ---------- inputs ---------- */
 
 textarea,

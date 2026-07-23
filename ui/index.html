@@ -32,7 +32,21 @@
       </div>
 
       <section class="card status-card">
-        <div class="card-label">接続状態</div>
+        <div class="card-label">
+          接続状態
+          <button id="token-help" class="help-icon" aria-label="トークンが必要な理由">?</button>
+        </div>
+        <p id="token-hint" class="hint" hidden>
+          このアプリはあなたの代わりにInstagramへコメントの確認・返信を行います。
+          そのためにMetaが発行する「長期アクセストークン」が必要です。<br />
+          トークンはこのパソコンの中 (OSのキーチェーン) にだけ保存され、Instagram
+          (Meta) のAPI呼び出し以外に送信されることはありません。<br />
+          発行手順は
+          <a id="setup-guide-link" href="https://github.com/kenshin-morioka/instagram-crm/blob/main/doc/META_SETUP.md"
+            >取得手順書 (META_SETUP.md)</a
+          >
+          を参照してください。
+        </p>
         <p id="status-line" aria-live="polite">
           <span id="status-dot" class="dot"></span>
           <span id="status-text">確認中...</span>

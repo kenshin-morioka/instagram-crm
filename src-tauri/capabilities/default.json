@@ -3,5 +3,13 @@
   "identifier": "default",
   "description": "メインウィンドウの既定権限",
   "windows": ["main"],
-  "permissions": ["core:default", "updater:default", "process:allow-restart"]
+  "permissions": [
+    "core:default",
+    "updater:default",
+    "process:allow-restart",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "https://github.com/kenshin-morioka/instagram-crm/*" }]
+    }
+  ]
 }
