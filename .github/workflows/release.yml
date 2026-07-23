@@ -54,5 +54,6 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: "Instagram CRM ${{ github.ref_name }}"
           releaseBody: "詳細は下記のAssetsからOSに合ったファイルをダウンロードしてください。macOS: .dmg / Windows: .msi"
-          releaseDraft: false
+          # 「-test」を含むタグ (例: v0.0.1-test) は下書きRelease (公開されず、自動アップデートにも配信されない)
+          releaseDraft: ${{ contains(github.ref_name, '-test') }}
           args: ${{ matrix.args }}
