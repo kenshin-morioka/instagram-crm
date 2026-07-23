@@ -115,6 +115,11 @@ main {
   font-weight: 600;
 }
 
+/* display: flex がhidden属性 (display: none) より優先されてしまうのを打ち消す */
+.update-banner[hidden] {
+  display: none;
+}
+
 .update-banner .btn {
   flex: none;
 }
@@ -272,6 +277,11 @@ main {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* display: flex がhidden属性 (display: none) より優先されてしまうのを打ち消す */
+#token-form[hidden] {
+  display: none;
 }
 
 #token-form input {
