@@ -424,6 +424,64 @@ input[type="number"]:focus {
   color: var(--text-sub);
 }
 
+/* ---------- 利用条件同意ダイアログ ---------- */
+
+.terms-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 20;
+}
+
+.terms-overlay[hidden] {
+  display: none;
+}
+
+.terms-dialog {
+  max-width: 420px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  margin-bottom: 0;
+  padding: 20px;
+}
+
+.terms-dialog h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.terms-lead {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+
+.terms-list {
+  margin: 0 0 14px;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-sub);
+}
+
+.terms-agree {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.terms-dialog .btn-gradient {
+  width: 100%;
+}
+
 /* ---------- toast ---------- */
 
 .toast {

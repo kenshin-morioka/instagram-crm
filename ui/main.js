@@ -27,6 +27,10 @@ const appVersion = document.getElementById("app-version");
 const updateBanner = document.getElementById("update-banner");
 const updateText = document.getElementById("update-text");
 const updateButton = document.getElementById("update-button");
+const mainContent = document.querySelector("main");
+const termsOverlay = document.getElementById("terms-overlay");
+const termsCheckbox = document.getElementById("terms-checkbox");
+const termsAccept = document.getElementById("terms-accept");
 
 const STATUS_VIEW = {
   connected: { text: "接続済み", dotClass: "connected", showConnect: false },
@@ -235,6 +239,39 @@ getVersion()
   })
   .catch((e) => console.error(e));
 
+// オーバーレイ表示中は背面UIをinertにしてキーボードフォーカスも隔離する
+function setTermsOverlayVisible(visible) {
+  termsOverlay.hidden = !visible;
+  mainContent.inert = visible;
+  if (visible) termsCheckbox.focus();
+}
+
+termsCheckbox.addEventListener("change", () => {
+  termsAccept.disabled = !termsCheckbox.checked;
+});
+
+termsAccept.addEventListener("click", async () => {
+  try {
+    await invoke("accept_terms");
+    setTermsOverlayVisible(false);
+  } catch (e) {
+    showMessage(String(e));
+  }
+});
+
+// 未同意なら同意ダイアログでUI全体を覆う。
+// 判定が完了するまで・判定に失敗した場合も未同意扱い (安全側)
+async function showTermsIfNeeded() {
+  setTermsOverlayVisible(true);
+  try {
+    const accepted = await invoke("get_terms_accepted");
+    if (accepted) setTermsOverlayVisible(false);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+showTermsIfNeeded();
 loadSettings().catch((e) => showMessage(String(e)));
 refreshStatus();
 setInterval(refreshStatus, 5000);

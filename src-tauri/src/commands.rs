@@ -44,6 +44,20 @@ pub fn get_status(state: State<'_, AppState>) -> StatusPayload {
     status_payload(&state)
 }
 
+/// 初回起動時の利用条件に同意済みか
+#[tauri::command]
+pub fn get_terms_accepted(state: State<'_, AppState>) -> bool {
+    state.terms_accepted()
+}
+
+/// 利用条件への同意を記録する (同意日時を保存。再実行しても上書きされるだけで無害)
+#[tauri::command]
+pub fn accept_terms(state: State<'_, AppState>) -> AppResult<()> {
+    state.set_terms_accepted(&Utc::now().to_rfc3339())?;
+    log::info!("利用条件への同意を記録しました");
+    Ok(())
+}
+
 /// ドライランの切り替え。解除すると実際の送信が始まる
 #[tauri::command]
 pub fn set_dry_run(state: State<'_, AppState>, enabled: bool) -> AppResult<StatusPayload> {
