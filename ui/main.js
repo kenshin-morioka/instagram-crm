@@ -2,7 +2,8 @@ const { invoke } = window.__TAURI__.core;
 
 const statusDot = document.getElementById("status-dot");
 const statusText = document.getElementById("status-text");
-const dryRunBadge = document.getElementById("dry-run-badge");
+const modeBadge = document.getElementById("mode-badge");
+const modeHint = document.getElementById("mode-hint");
 const dryRunButton = document.getElementById("dry-run-button");
 const pausedBadge = document.getElementById("paused-badge");
 const pauseButton = document.getElementById("pause-button");
@@ -49,14 +50,19 @@ function renderStatus(payload) {
 
   sendingPaused = payload.sending_paused;
   dryRun = payload.dry_run;
-  dryRunBadge.hidden = !payload.dry_run;
   pausedBadge.hidden = !payload.sending_paused;
 
   const connected = payload.status === "connected";
   pauseButton.hidden = !connected;
   pauseButton.textContent = payload.sending_paused ? "送信を再開" : "送信を一時停止";
-  dryRunButton.hidden = !connected;
-  dryRunButton.textContent = payload.dry_run ? "ドライランを解除" : "ドライランに戻す";
+
+  modeBadge.textContent = payload.dry_run ? "ドライラン中 (送信なし)" : "実送信中";
+  modeBadge.className = `mode-badge ${payload.dry_run ? "mode-dry" : "mode-live"}`;
+  modeHint.hidden = !payload.dry_run;
+  dryRunButton.textContent = payload.dry_run ? "実送信を開始する" : "ドライランに戻す";
+  // 実送信の開始は目立たせ、テストへ戻す操作は控えめにする
+  dryRunButton.className = payload.dry_run ? "btn btn-gradient" : "btn";
+  dryRunButton.disabled = !connected;
 }
 
 async function refreshStatus() {
@@ -97,7 +103,7 @@ connectButton.addEventListener("click", async () => {
 dryRunButton.addEventListener("click", async () => {
   if (
     dryRun &&
-    !confirm("ドライランを解除すると、対象コメントへの実際の自動返信が始まります。よろしいですか？")
+    !confirm("実送信を開始すると、対象コメントへの実際の自動返信が始まります。よろしいですか？")
   ) {
     return;
   }
@@ -106,7 +112,7 @@ dryRunButton.addEventListener("click", async () => {
   const wasDryRun = dryRun;
   try {
     renderStatus(await invoke("set_dry_run", { enabled: !dryRun }));
-    showMessage(wasDryRun ? "ドライランを解除しました (実送信が始まります)" : "ドライランに戻しました");
+    showMessage(wasDryRun ? "実送信を開始しました" : "ドライランに戻しました (送信なし)");
   } catch (e) {
     showMessage(String(e));
   }
