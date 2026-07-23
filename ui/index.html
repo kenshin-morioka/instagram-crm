@@ -29,11 +29,9 @@
         <p id="status-line" aria-live="polite">
           <span id="status-dot" class="dot"></span>
           <span id="status-text">確認中...</span>
-          <span id="dry-run-badge" class="badge" hidden>ドライラン中</span>
           <span id="paused-badge" class="badge badge-warn" hidden>送信停止中</span>
         </p>
         <p class="btn-row">
-          <button id="dry-run-button" class="btn btn-small" hidden>ドライランを解除</button>
           <button id="pause-button" class="btn btn-small" hidden>送信を一時停止</button>
         </p>
         <div id="token-form" hidden>
@@ -50,6 +48,20 @@
             トークンジェネレーターで発行できます
           </p>
         </div>
+      </section>
+
+      <section class="card mode-card">
+        <div class="card-label">送信モード</div>
+        <p id="mode-line" aria-live="polite">
+          <span id="mode-badge" class="mode-badge mode-dry">ドライラン中 (送信なし)</span>
+        </p>
+        <p id="mode-hint" class="hint">
+          ドライラン中は自動返信を送信しません。返信対象のコメントを見つけても
+          「検出した」ことをログと履歴に記録するだけです。
+          キーワードや対象リールの設定が意図どおり動くか、実送信の前に安全に確認できます。
+          確認が済んだら下のボタンで実送信を開始してください。
+        </p>
+        <button id="dry-run-button" class="btn btn-gradient" disabled>実送信を開始する</button>
       </section>
 
       <section class="card">
