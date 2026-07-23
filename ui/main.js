@@ -3,6 +3,9 @@ const { getVersion } = window.__TAURI__.app;
 const { check: checkUpdate } = window.__TAURI__.updater;
 const { relaunch } = window.__TAURI__.process;
 const { openUrl } = window.__TAURI__.opener;
+// window.confirm はmacOSのWebView (WKWebView) で未実装のため、
+// 何も表示されず常にfalseが返る。プラグインのネイティブダイアログを使う
+const { confirm } = window.__TAURI__.dialog;
 
 const statusDot = document.getElementById("status-dot");
 const statusText = document.getElementById("status-text");
@@ -155,36 +158,50 @@ connectButton.addEventListener("click", async () => {
 });
 
 dryRunButton.addEventListener("click", async () => {
-  if (
-    dryRun &&
-    !confirm("実送信を開始すると、対象コメントへの実際の自動返信が始まります。よろしいですか？")
-  ) {
-    return;
-  }
   // renderStatusがdryRun/sendingPausedを切替後の値で上書きするため、
   // トースト文言の判定には切替前の値を使う
   const wasDryRun = dryRun;
+  // 確認ダイアログ待機中の再クリックで処理が二重に走らないよう無効化する
+  dryRunButton.disabled = true;
   try {
-    renderStatus(await invoke("set_dry_run", { enabled: !dryRun }));
+    if (
+      wasDryRun &&
+      !(await confirm(
+        "実送信を開始すると、対象コメントへの実際の自動返信が始まります。よろしいですか？",
+        { title: "実送信の開始", kind: "warning" }
+      ))
+    ) {
+      return;
+    }
+    renderStatus(await invoke("set_dry_run", { enabled: !wasDryRun }));
     showMessage(wasDryRun ? "実送信を開始しました" : "ドライランに戻しました (送信なし)");
   } catch (e) {
     showMessage(String(e));
+  } finally {
+    dryRunButton.disabled = false;
   }
 });
 
 pauseButton.addEventListener("click", async () => {
-  if (
-    sendingPaused &&
-    !confirm("送信を再開すると、対象コメントへの自動返信が再び始まります。よろしいですか？")
-  ) {
-    return;
-  }
   const wasPaused = sendingPaused;
+  // 確認ダイアログ待機中の再クリックで処理が二重に走らないよう無効化する
+  pauseButton.disabled = true;
   try {
-    renderStatus(await invoke("set_sending_paused", { paused: !sendingPaused }));
+    if (
+      wasPaused &&
+      !(await confirm(
+        "送信を再開すると、対象コメントへの自動返信が再び始まります。よろしいですか？",
+        { title: "送信の再開", kind: "warning" }
+      ))
+    ) {
+      return;
+    }
+    renderStatus(await invoke("set_sending_paused", { paused: !wasPaused }));
     showMessage(wasPaused ? "送信を再開しました" : "送信を一時停止しました");
   } catch (e) {
     showMessage(String(e));
+  } finally {
+    pauseButton.disabled = false;
   }
 });
 
