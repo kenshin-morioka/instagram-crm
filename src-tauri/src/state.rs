@@ -8,9 +8,25 @@ use crate::models::{ConnectionStatus, TokenInfo};
 /// 下限を30秒にしているのは、Instagram Graph APIのレート制限
 /// (アプリ・アカウント単位の時間あたり呼び出し数) に達しにくくするため
 pub const MIN_POLLING_INTERVAL_SECS: u64 = 30;
-/// 上限を12時間にしているのは、コメントの返信対象が直近24時間
+/// 上限を12時間にしているのは、コメントの返信対象が既定で直近24時間
 /// (comment_lookback_hours) のため、それを超える間隔だと取りこぼすから
 pub const MAX_POLLING_INTERVAL_SECS: u64 = 12 * 60 * 60;
+
+/// 1周期で取得するメディア件数の範囲。上限はAPI呼び出し数の急増を防ぐため
+/// (メディア1件につきコメント取得APIが最低1回走る)
+pub const MIN_MEDIA_FETCH_LIMIT: u32 = 1;
+pub const MAX_MEDIA_FETCH_LIMIT: u32 = 25;
+
+/// コメント対象期間 (何時間前まで) の範囲。上限7日は、それより古いコメントへの
+/// 突然の定型返信がスパム的に映るのを避けるため
+pub const MIN_LOOKBACK_HOURS: i64 = 1;
+pub const MAX_LOOKBACK_HOURS: i64 = 7 * 24;
+
+/// 1リールあたりで確認するコメント件数上限の範囲。
+/// 下限50はAPIの1ページ分。上限1000はコメント総数の多いリールで
+/// 毎周期のAPI消費が際限なく増えるのを防ぐため
+pub const MIN_COMMENT_FETCH_LIMIT: u32 = 50;
+pub const MAX_COMMENT_FETCH_LIMIT: u32 = 1000;
 
 pub struct AppState {
     pub config: AppConfig,
@@ -18,6 +34,12 @@ pub struct AppState {
     pub ig: InstagramClient,
     token: RwLock<Option<TokenInfo>>,
     status: RwLock<ConnectionStatus>,
+    /// ポーリング中の進捗表示 (UI用)。周期の外ではNone
+    cycle_progress: RwLock<Option<String>>,
+    /// 一時エラーが連続していて自動再試行中か (UI警告表示用)
+    connection_issue: RwLock<bool>,
+    /// 直近の周期でコメント取得がページ上限で打ち切られたか (返信漏れ可能性の通知用)
+    fetch_truncated: RwLock<bool>,
 }
 
 impl AppState {
@@ -34,6 +56,9 @@ impl AppState {
             ig,
             token: RwLock::new(token),
             status: RwLock::new(status),
+            cycle_progress: RwLock::new(None),
+            connection_issue: RwLock::new(false),
+            fetch_truncated: RwLock::new(false),
         }
     }
 
@@ -73,6 +98,80 @@ impl AppState {
         saved
             .unwrap_or(self.config.polling_interval_secs)
             .clamp(MIN_POLLING_INTERVAL_SECS, MAX_POLLING_INTERVAL_SECS)
+    }
+
+    /// 1周期で取得するメディア件数。UIで保存された値 (SQLite) を優先し、
+    /// なければ設定ファイルの初期値を使う
+    pub fn media_fetch_limit(&self) -> u32 {
+        self.db
+            .get_setting(keys::MEDIA_FETCH_LIMIT)
+            .ok()
+            .flatten()
+            .and_then(|v| v.parse::<u32>().ok())
+            .unwrap_or(self.config.media_fetch_limit)
+            .clamp(MIN_MEDIA_FETCH_LIMIT, MAX_MEDIA_FETCH_LIMIT)
+    }
+
+    /// 何時間前までのコメントを返信対象とするか。UIで保存された値 (SQLite) を優先し、
+    /// なければ設定ファイルの初期値を使う
+    pub fn comment_lookback_hours(&self) -> i64 {
+        self.db
+            .get_setting(keys::COMMENT_LOOKBACK_HOURS)
+            .ok()
+            .flatten()
+            .and_then(|v| v.parse::<i64>().ok())
+            .unwrap_or(self.config.comment_lookback_hours)
+            .clamp(MIN_LOOKBACK_HOURS, MAX_LOOKBACK_HOURS)
+    }
+
+    /// 1リールあたりで確認するコメント件数の上限。UIで保存された値 (SQLite) を優先し、
+    /// なければ設定ファイルの初期値を使う
+    pub fn comment_fetch_limit(&self) -> u32 {
+        self.db
+            .get_setting(keys::COMMENT_FETCH_LIMIT)
+            .ok()
+            .flatten()
+            .and_then(|v| v.parse::<u32>().ok())
+            .unwrap_or(self.config.comment_fetch_limit)
+            .clamp(MIN_COMMENT_FETCH_LIMIT, MAX_COMMENT_FETCH_LIMIT)
+    }
+
+    /// ポーリング中の進捗表示 (UI用)
+    pub fn cycle_progress(&self) -> Option<String> {
+        self.cycle_progress.read().ok().and_then(|p| p.clone())
+    }
+
+    pub fn set_cycle_progress(&self, progress: Option<String>) {
+        if let Ok(mut guard) = self.cycle_progress.write() {
+            *guard = progress;
+        }
+    }
+
+    /// 一時エラーが連続していて自動再試行中か (UI警告表示用)
+    pub fn connection_issue(&self) -> bool {
+        self.connection_issue.read().map(|v| *v).unwrap_or(false)
+    }
+
+    pub fn set_connection_issue(&self, issue: bool) {
+        if let Ok(mut guard) = self.connection_issue.write() {
+            *guard = issue;
+        }
+    }
+
+    /// 直近の周期でコメント取得がページ上限で打ち切られたか
+    pub fn fetch_truncated(&self) -> bool {
+        self.fetch_truncated.read().map(|v| *v).unwrap_or(false)
+    }
+
+    pub fn set_fetch_truncated(&self, truncated: bool) {
+        if let Ok(mut guard) = self.fetch_truncated.write() {
+            *guard = truncated;
+        }
+    }
+
+    /// 直近の成功した周期の集計 (UI表示用)
+    pub fn last_cycle_summary(&self) -> Option<String> {
+        self.db.get_setting(keys::LAST_CYCLE_SUMMARY).ok().flatten()
     }
 
     /// 返信文。未設定なら空文字を返す (デフォルト文は持たず、未設定時は送信しない)
@@ -292,6 +391,91 @@ mod tests {
         let state = state_with(None);
         state.db.set_setting(keys::TERMS_ACCEPTED_AT, "  ").unwrap();
         assert!(!state.terms_accepted());
+    }
+
+    #[test]
+    fn media_fetch_limit_falls_back_to_config_and_prefers_db() {
+        let state = state_with(None);
+        assert_eq!(state.media_fetch_limit(), 10, "設定ファイル初期値");
+        state.db.set_setting(keys::MEDIA_FETCH_LIMIT, "5").unwrap();
+        assert_eq!(state.media_fetch_limit(), 5, "UIで保存した値が優先");
+    }
+
+    #[test]
+    fn media_fetch_limit_is_clamped_and_ignores_invalid() {
+        let state = state_with(None);
+        state.db.set_setting(keys::MEDIA_FETCH_LIMIT, "0").unwrap();
+        assert_eq!(state.media_fetch_limit(), MIN_MEDIA_FETCH_LIMIT);
+        state.db.set_setting(keys::MEDIA_FETCH_LIMIT, "999").unwrap();
+        assert_eq!(state.media_fetch_limit(), MAX_MEDIA_FETCH_LIMIT);
+        state.db.set_setting(keys::MEDIA_FETCH_LIMIT, "abc").unwrap();
+        assert_eq!(state.media_fetch_limit(), 10, "不正値は初期値へフォールバック");
+    }
+
+    #[test]
+    fn comment_lookback_hours_falls_back_to_config_and_prefers_db() {
+        let state = state_with(None);
+        assert_eq!(state.comment_lookback_hours(), 24, "設定ファイル初期値");
+        state
+            .db
+            .set_setting(keys::COMMENT_LOOKBACK_HOURS, "48")
+            .unwrap();
+        assert_eq!(state.comment_lookback_hours(), 48, "UIで保存した値が優先");
+    }
+
+    #[test]
+    fn comment_lookback_hours_is_clamped() {
+        let state = state_with(None);
+        state
+            .db
+            .set_setting(keys::COMMENT_LOOKBACK_HOURS, "0")
+            .unwrap();
+        assert_eq!(state.comment_lookback_hours(), MIN_LOOKBACK_HOURS);
+        state
+            .db
+            .set_setting(keys::COMMENT_LOOKBACK_HOURS, "9999")
+            .unwrap();
+        assert_eq!(state.comment_lookback_hours(), MAX_LOOKBACK_HOURS);
+    }
+
+    #[test]
+    fn comment_fetch_limit_falls_back_prefers_db_and_clamps() {
+        let state = state_with(None);
+        assert_eq!(state.comment_fetch_limit(), 200, "設定ファイル初期値");
+        state
+            .db
+            .set_setting(keys::COMMENT_FETCH_LIMIT, "500")
+            .unwrap();
+        assert_eq!(state.comment_fetch_limit(), 500, "UIで保存した値が優先");
+        state.db.set_setting(keys::COMMENT_FETCH_LIMIT, "1").unwrap();
+        assert_eq!(state.comment_fetch_limit(), MIN_COMMENT_FETCH_LIMIT);
+        state
+            .db
+            .set_setting(keys::COMMENT_FETCH_LIMIT, "99999")
+            .unwrap();
+        assert_eq!(state.comment_fetch_limit(), MAX_COMMENT_FETCH_LIMIT);
+    }
+
+    #[test]
+    fn cycle_progress_and_flags_default_and_toggle() {
+        let state = state_with(None);
+        assert_eq!(state.cycle_progress(), None);
+        assert!(!state.connection_issue());
+        assert!(!state.fetch_truncated());
+
+        state.set_cycle_progress(Some("取得中".into()));
+        state.set_connection_issue(true);
+        state.set_fetch_truncated(true);
+        assert_eq!(state.cycle_progress(), Some("取得中".into()));
+        assert!(state.connection_issue());
+        assert!(state.fetch_truncated());
+
+        state.set_cycle_progress(None);
+        state.set_connection_issue(false);
+        state.set_fetch_truncated(false);
+        assert_eq!(state.cycle_progress(), None);
+        assert!(!state.connection_issue());
+        assert!(!state.fetch_truncated());
     }
 
     #[test]

@@ -22,6 +22,18 @@ const saveInterval = document.getElementById("save-interval");
 const lastRun = document.getElementById("last-run");
 const pollingHelp = document.getElementById("polling-help");
 const pollingHint = document.getElementById("polling-hint");
+const issueBadge = document.getElementById("issue-badge");
+const issueHint = document.getElementById("issue-hint");
+const progressLine = document.getElementById("progress-line");
+const progressText = document.getElementById("progress-text");
+const truncatedNote = document.getElementById("truncated-note");
+const cycleSummary = document.getElementById("cycle-summary");
+const fetchLimit = document.getElementById("fetch-limit");
+const lookbackHours = document.getElementById("lookback-hours");
+const commentLimit = document.getElementById("comment-limit");
+const saveFetch = document.getElementById("save-fetch");
+const fetchHelp = document.getElementById("fetch-help");
+const fetchHint = document.getElementById("fetch-hint");
 const message = document.getElementById("message");
 const appVersion = document.getElementById("app-version");
 const updateBanner = document.getElementById("update-banner");
@@ -59,7 +71,22 @@ function renderStatus(payload) {
   statusText.textContent = view.text;
   statusDot.className = `dot ${view.dotClass}`;
   tokenForm.hidden = !view.showConnect;
-  lastRun.textContent = payload.last_run_at ?? "-";
+  lastRun.textContent = payload.last_run_at
+    ? `最終チェック: ${payload.last_run_at}`
+    : "-";
+
+  // 実行中はスピナー付きで進捗を出す
+  progressLine.hidden = !payload.progress;
+  progressText.textContent = payload.progress ?? "";
+
+  // 直近の周期で何を確認したか (「本当に動いてる？」への答え)
+  cycleSummary.hidden = !payload.last_cycle_summary;
+  cycleSummary.textContent = payload.last_cycle_summary ?? "";
+
+  // 一時エラー連続時の警告と、コメント確認しきれなかった可能性の通知
+  issueBadge.hidden = !payload.connection_issue;
+  issueHint.hidden = !payload.connection_issue;
+  truncatedNote.hidden = !payload.fetch_truncated;
 
   sendingPaused = payload.sending_paused;
   dryRun = payload.dry_run;
@@ -102,6 +129,9 @@ async function loadSettings() {
   const settings = await invoke("get_settings");
   replyText.value = settings.reply_text;
   displayInterval(settings.polling_interval_secs);
+  fetchLimit.value = settings.media_fetch_limit;
+  lookbackHours.value = settings.comment_lookback_hours;
+  commentLimit.value = settings.comment_fetch_limit;
 }
 
 connectButton.addEventListener("click", async () => {
@@ -168,6 +198,61 @@ saveReply.addEventListener("click", async () => {
 
 pollingHelp.addEventListener("click", () => {
   pollingHint.hidden = !pollingHint.hidden;
+});
+
+fetchHelp.addEventListener("click", () => {
+  fetchHint.hidden = !fetchHint.hidden;
+});
+
+const replyHelp = document.getElementById("reply-help");
+const replyHint = document.getElementById("reply-hint");
+replyHelp.addEventListener("click", () => {
+  replyHint.hidden = !replyHint.hidden;
+});
+
+// バックエンドの上下限 (state.rs の定数) と同じ値
+const MIN_FETCH_LIMIT = 1;
+const MAX_FETCH_LIMIT = 25;
+const MIN_LOOKBACK_HOURS = 1;
+const MAX_LOOKBACK_HOURS = 168;
+const MIN_COMMENT_LIMIT = 50;
+const MAX_COMMENT_LIMIT = 1000;
+
+saveFetch.addEventListener("click", async () => {
+  const limit = Number(fetchLimit.value);
+  const hours = Number(lookbackHours.value);
+  const comments = Number(commentLimit.value);
+  // 小数や数値以外はバックエンドのserdeエラー (英語) がそのまま出るため先に弾く
+  if (!Number.isInteger(limit) || limit < MIN_FETCH_LIMIT || limit > MAX_FETCH_LIMIT) {
+    showMessage(`対象リール数は${MIN_FETCH_LIMIT}〜${MAX_FETCH_LIMIT}件で入力してください`);
+    return;
+  }
+  if (!Number.isInteger(hours) || hours < MIN_LOOKBACK_HOURS || hours > MAX_LOOKBACK_HOURS) {
+    showMessage(
+      `コメント対象期間は${MIN_LOOKBACK_HOURS}〜${MAX_LOOKBACK_HOURS}時間で入力してください`
+    );
+    return;
+  }
+  if (
+    !Number.isInteger(comments) ||
+    comments < MIN_COMMENT_LIMIT ||
+    comments > MAX_COMMENT_LIMIT
+  ) {
+    showMessage(
+      `コメント確認上限は${MIN_COMMENT_LIMIT}〜${MAX_COMMENT_LIMIT}件で入力してください`
+    );
+    return;
+  }
+  try {
+    await invoke("save_fetch_settings", {
+      mediaFetchLimit: limit,
+      commentLookbackHours: hours,
+      commentFetchLimit: comments,
+    });
+    showMessage("取得範囲を保存しました");
+  } catch (e) {
+    showMessage(String(e));
+  }
 });
 
 saveInterval.addEventListener("click", async () => {
@@ -274,7 +359,8 @@ async function showTermsIfNeeded() {
 showTermsIfNeeded();
 loadSettings().catch((e) => showMessage(String(e)));
 refreshStatus();
-setInterval(refreshStatus, 5000);
+// 2秒間隔なのはポーリング中の進捗表示を取りこぼさないため (ローカルIPCのみで軽量)
+setInterval(refreshStatus, 2000);
 checkForUpdate();
 // 常駐アプリのため起動時だけでなく6時間ごとにも確認する
 setInterval(checkForUpdate, 6 * 60 * 60 * 1000);

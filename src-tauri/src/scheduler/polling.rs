@@ -10,12 +10,17 @@ use crate::state::AppState;
 /// 429時の指数バックオフの最大倍率 (30秒設定なら 30→60→120→240)
 const MAX_BACKOFF_LEVEL: u32 = 3;
 
+/// 一時エラーがこの回数連続したらUIに「接続に問題」警告を出す。
+/// 単発の失敗は次周期の再試行で自動回復するため騒がない
+const CONNECTION_ISSUE_THRESHOLD: u32 = 3;
+
 /// バックグラウンドのポーリングループを起動する
 pub fn spawn(app: AppHandle) {
     tauri::async_runtime::spawn(async move {
         let http = crate::api::instagram::http_client();
         let mut backoff_level: u32 = 0;
         let mut retry_after: Option<u64> = None;
+        let mut consecutive_failures: u32 = 0;
 
         loop {
             let state = app.state::<AppState>();
@@ -25,10 +30,15 @@ pub fn spawn(app: AppHandle) {
                 // 周期実行中の再連携で有効になった新トークンを、旧トークンの失効エラーで
                 // NeedsReauthに上書きしないよう、実行前のトークンを控えておく
                 let token_before_cycle = state.token().map(|t| t.access_token);
-                match auto_reply::run_cycle(&state, &http).await {
+                let cycle_result = auto_reply::run_cycle(&state, &http).await;
+                // 早期return・エラーを含む全経路で進捗表示を確実に消す
+                state.set_cycle_progress(None);
+                match cycle_result {
                     Ok(report) => {
                         backoff_level = 0;
                         retry_after = None;
+                        consecutive_failures = 0;
+                        state.set_connection_issue(false);
                         if report.has_activity() {
                             log::info!(
                                 "ポーリング完了: 取得={} 返信={} 失敗={} 不明={} 再試行待ち={} dry_run={}",
@@ -44,6 +54,8 @@ pub fn spawn(app: AppHandle) {
                     Err(AppError::RateLimited { retry_after_secs }) => {
                         backoff_level = (backoff_level + 1).min(MAX_BACKOFF_LEVEL);
                         retry_after = retry_after_secs;
+                        // レート制限は接続自体は生きているため、接続警告の対象にしない
+                        consecutive_failures = 0;
                         log::warn!(
                             "Rate Limitに到達。バックオフします (レベル{} Retry-After={:?})",
                             backoff_level,
@@ -53,6 +65,8 @@ pub fn spawn(app: AppHandle) {
                     Err(AppError::TokenExpired) => {
                         backoff_level = 0;
                         retry_after = None;
+                        // 再連携要求はUIで別途表示されるため、接続警告の対象にしない
+                        consecutive_failures = 0;
                         // 周期中にトークンが差し替わっていれば失効したのは旧トークン。
                         // 新トークンでの接続状態を維持し、次周期に判断を委ねる
                         if state.token().map(|t| t.access_token) != token_before_cycle {
@@ -66,8 +80,13 @@ pub fn spawn(app: AppHandle) {
                         }
                     }
                     Err(e) => {
-                        // 一時的なAPIエラーはログのみ残し、次回ポーリングで再試行する
-                        log::error!("APIエラー: {}", e);
+                        // 一時的なAPIエラーは次回ポーリングで再試行する。
+                        // 連続するようならUIに警告を出してユーザーが気付けるようにする
+                        consecutive_failures += 1;
+                        if consecutive_failures >= CONNECTION_ISSUE_THRESHOLD {
+                            state.set_connection_issue(true);
+                        }
+                        log::error!("APIエラー ({}回連続): {}", consecutive_failures, e);
                     }
                 }
             }

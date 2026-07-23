@@ -16,6 +16,14 @@ pub mod keys {
     pub const DRY_RUN: &str = "dry_run";
     /// 初回起動時の利用条件への同意日時 (RFC 3339)。未設定なら未同意
     pub const TERMS_ACCEPTED_AT: &str = "terms_accepted_at";
+    /// 1周期で取得する自分のメディア件数: UIから保存した値。未設定なら設定ファイルの初期値
+    pub const MEDIA_FETCH_LIMIT: &str = "media_fetch_limit";
+    /// 何時間前までのコメントを返信対象とするか: UIから保存した値。未設定なら設定ファイルの初期値
+    pub const COMMENT_LOOKBACK_HOURS: &str = "comment_lookback_hours";
+    /// 1リールあたりで確認するコメント件数の上限: UIから保存した値。未設定なら設定ファイルの初期値
+    pub const COMMENT_FETCH_LIMIT: &str = "comment_fetch_limit";
+    /// 直近の成功した周期の集計 (UI表示用。例: "コメント32件を確認 / 返信2件")
+    pub const LAST_CYCLE_SUMMARY: &str = "last_cycle_summary";
 }
 
 /// 返信処理の状態

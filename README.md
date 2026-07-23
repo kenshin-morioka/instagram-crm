@@ -72,11 +72,11 @@
 |---|---|---|
 | `allowed_media_ids` | （空） | 返信対象のリールを限定する（空 = 全リール） |
 | `reply_keywords` | （空） | コメント本文に指定した語を含む場合だけ返信（空 = 全件） |
-| `comment_lookback_hours` | 24 | これより古いコメントは対象外 |
+| `comment_lookback_hours` | 24 | これより古いコメントは対象外（初期値。アプリの画面から変更可） |
 | `max_comment_length` | 500 | これより長いコメントは対象外 |
 | `usage_pause_threshold_pct` | 90 | API 使用量がこの % を超えたら送信を一時停止 |
 
-返信文とチェック間隔（ポーリング間隔）は、アプリの画面から変更できます。全項目は [config.example.json](config.example.json) を参照してください。
+返信文・チェック間隔（ポーリング間隔）・取得範囲（対象リール数とコメント対象期間）は、アプリの画面から変更できます。全項目は [config.example.json](config.example.json) を参照してください。
 
 ### 困ったとき
 

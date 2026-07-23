@@ -22,6 +22,8 @@ pub struct AppConfig {
     pub comment_lookback_hours: i64,
     /// 1回のポーリングで取得する自分のメディア件数
     pub media_fetch_limit: u32,
+    /// 1リールあたりで確認するコメント件数の上限 (1周期あたり)
+    pub comment_fetch_limit: u32,
     /// trueの間は返信を送信せず、対象をログに出すだけ (安全のため既定ON)
     pub dry_run: bool,
     /// 返信対象とするリールのmedia_id。空なら自分の全リールが対象
@@ -42,6 +44,7 @@ impl Default for AppConfig {
             polling_interval_secs: 30,
             comment_lookback_hours: 24,
             media_fetch_limit: 10,
+            comment_fetch_limit: 200,
             dry_run: true,
             allowed_media_ids: Vec::new(),
             reply_keywords: Vec::new(),

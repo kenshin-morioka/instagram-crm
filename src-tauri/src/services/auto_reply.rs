@@ -76,22 +76,33 @@ pub async fn run_cycle(state: &AppState, http: &reqwest::Client) -> AppResult<Cy
     let token = maybe_refresh_token(state, http, token).await;
 
     let mut report = CycleReport::default();
-    let lookback_limit = Utc::now() - Duration::hours(state.config.comment_lookback_hours);
+    let lookback_limit = Utc::now() - Duration::hours(state.comment_lookback_hours());
     let reply_text_hash = text_hash(&reply_text);
 
+    state.set_cycle_progress(Some("リール一覧を取得中...".into()));
     let media_list = state
         .ig
-        .fetch_recent_media(&token.access_token, state.config.media_fetch_limit)
+        .fetch_recent_media(&token.access_token, state.media_fetch_limit())
         .await?;
-    let target_reels = media_list
+    let target_reels: Vec<_> = media_list
         .iter()
-        .filter(|m| m.is_reel() && state.config.is_media_allowed(&m.id));
+        .filter(|m| m.is_reel() && state.config.is_media_allowed(&m.id))
+        .collect();
+    let total_reels = target_reels.len();
 
-    for media in target_reels {
-        let comments = state
+    let mut any_truncated = false;
+    for (index, media) in target_reels.into_iter().enumerate() {
+        state.set_cycle_progress(Some(format!(
+            "コメントを確認中... (リール {}/{})",
+            index + 1,
+            total_reels
+        )));
+        let page = state
             .ig
-            .fetch_comments(&token.access_token, &media.id)
+            .fetch_comments(&token.access_token, &media.id, state.comment_fetch_limit())
             .await?;
+        let comments = page.comments;
+        any_truncated |= page.truncated;
         log::info!("コメント取得: media_id={} 件数={}", media.id, comments.len());
         report.fetched_comments += comments.len();
 
@@ -174,11 +185,39 @@ pub async fn run_cycle(state: &AppState, http: &reqwest::Client) -> AppResult<Cy
         }
     }
 
+    // 打ち切りがあった周期はUIに「確認しきれていない可能性」を出し、
+    // なく完了した周期で解除する
+    state.set_fetch_truncated(any_truncated);
+    if any_truncated {
+        log::warn!("コメントが多く、この周期では一部を確認できていません (次周期で続きを確認)");
+    }
+
     state.db.set_setting(
         keys::LAST_RUN_AT,
         &Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
     )?;
+    state
+        .db
+        .set_setting(keys::LAST_CYCLE_SUMMARY, &summarize(total_reels, &report))?;
     Ok(report)
+}
+
+/// UIの「実行状況」に出す1行サマリー
+fn summarize(reels: usize, report: &CycleReport) -> String {
+    let mut parts = vec![format!(
+        "リール{}件・コメント{}件を確認",
+        reels, report.fetched_comments
+    )];
+    if report.replied > 0 {
+        parts.push(format!("返信{}件", report.replied));
+    }
+    if report.dry_run_matched > 0 {
+        parts.push(format!("対象検出{}件 (ドライラン)", report.dry_run_matched));
+    }
+    if report.failed > 0 {
+        parts.push(format!("失敗{}件", report.failed));
+    }
+    parts.join(" / ")
 }
 
 async fn send_reply(
@@ -554,6 +593,21 @@ mod tests {
         let http = crate::api::instagram::http_client();
         let report = run_cycle(&state, &http).await.expect("skipされること");
         assert!(!report.has_activity());
+    }
+
+    #[test]
+    fn summarize_reports_counts_compactly() {
+        let mut report = CycleReport::default();
+        report.fetched_comments = 12;
+        assert_eq!(summarize(3, &report), "リール3件・コメント12件を確認");
+
+        report.replied = 2;
+        report.dry_run_matched = 1;
+        report.failed = 1;
+        assert_eq!(
+            summarize(3, &report),
+            "リール3件・コメント12件を確認 / 返信2件 / 対象検出1件 (ドライラン) / 失敗1件"
+        );
     }
 
     #[test]

@@ -6,7 +6,11 @@ use crate::auth::{oauth, token_store};
 use crate::db::keys;
 use crate::error::{AppError, AppResult};
 use crate::models::{ConnectionStatus, TokenInfo};
-use crate::state::{AppState, MAX_POLLING_INTERVAL_SECS, MIN_POLLING_INTERVAL_SECS};
+use crate::state::{
+    AppState, MAX_COMMENT_FETCH_LIMIT, MAX_LOOKBACK_HOURS, MAX_MEDIA_FETCH_LIMIT,
+    MAX_POLLING_INTERVAL_SECS, MIN_COMMENT_FETCH_LIMIT, MIN_LOOKBACK_HOURS,
+    MIN_MEDIA_FETCH_LIMIT, MIN_POLLING_INTERVAL_SECS,
+};
 
 /// App Dashboardで発行される長期トークンの有効期間 (60日)。
 /// リフレッシュで実期限に同期できなかった場合のフォールバックとして使う
@@ -22,6 +26,14 @@ pub struct StatusPayload {
     pub last_run_at: Option<String>,
     pub sending_paused: bool,
     pub dry_run: bool,
+    /// ポーリング実行中の進捗表示。周期の外ではnull
+    pub progress: Option<String>,
+    /// 一時エラーが連続していて自動再試行中 (UIに警告を出す)
+    pub connection_issue: bool,
+    /// 直近の周期でコメント取得が上限で打ち切られた (確認漏れの可能性を通知)
+    pub fetch_truncated: bool,
+    /// 直近の成功した周期の集計 (例: "リール3件・コメント12件を確認 / 返信2件")
+    pub last_cycle_summary: Option<String>,
 }
 
 fn status_payload(state: &AppState) -> StatusPayload {
@@ -30,6 +42,10 @@ fn status_payload(state: &AppState) -> StatusPayload {
         last_run_at: state.last_run_at(),
         sending_paused: state.sending_paused(),
         dry_run: state.dry_run(),
+        progress: state.cycle_progress(),
+        connection_issue: state.connection_issue(),
+        fetch_truncated: state.fetch_truncated(),
+        last_cycle_summary: state.last_cycle_summary(),
     }
 }
 
@@ -37,6 +53,9 @@ fn status_payload(state: &AppState) -> StatusPayload {
 pub struct SettingsPayload {
     pub reply_text: String,
     pub polling_interval_secs: u64,
+    pub media_fetch_limit: u32,
+    pub comment_lookback_hours: i64,
+    pub comment_fetch_limit: u32,
 }
 
 #[tauri::command]
@@ -85,7 +104,62 @@ pub fn get_settings(state: State<'_, AppState>) -> SettingsPayload {
     SettingsPayload {
         reply_text: state.reply_text(),
         polling_interval_secs: state.polling_interval_secs(),
+        media_fetch_limit: state.media_fetch_limit(),
+        comment_lookback_hours: state.comment_lookback_hours(),
+        comment_fetch_limit: state.comment_fetch_limit(),
     }
+}
+
+/// 取得範囲の設定: 対象リール数・コメント対象期間・1リールあたりのコメント確認上限
+#[tauri::command]
+pub fn save_fetch_settings(
+    state: State<'_, AppState>,
+    media_fetch_limit: u32,
+    comment_lookback_hours: i64,
+    comment_fetch_limit: u32,
+) -> AppResult<()> {
+    if !(MIN_MEDIA_FETCH_LIMIT..=MAX_MEDIA_FETCH_LIMIT).contains(&media_fetch_limit) {
+        return Err(AppError::Config(format!(
+            "対象リール数は{}〜{}件で指定してください",
+            MIN_MEDIA_FETCH_LIMIT, MAX_MEDIA_FETCH_LIMIT
+        )));
+    }
+    if !(MIN_COMMENT_FETCH_LIMIT..=MAX_COMMENT_FETCH_LIMIT).contains(&comment_fetch_limit) {
+        return Err(AppError::Config(format!(
+            "コメント確認上限は{}〜{}件で指定してください",
+            MIN_COMMENT_FETCH_LIMIT, MAX_COMMENT_FETCH_LIMIT
+        )));
+    }
+    if !(MIN_LOOKBACK_HOURS..=MAX_LOOKBACK_HOURS).contains(&comment_lookback_hours) {
+        return Err(AppError::Config(format!(
+            "コメント対象期間は{}〜{}時間で指定してください",
+            MIN_LOOKBACK_HOURS, MAX_LOOKBACK_HOURS
+        )));
+    }
+    // 対象期間 < ポーリング間隔 だとチェックの合間に対象外へ抜けるコメントが出て
+    // 取りこぼすため、組み合わせとして拒否する
+    if (comment_lookback_hours as u64) * 3600 < state.polling_interval_secs() {
+        return Err(AppError::Config(
+            "コメント対象期間はポーリング間隔より長くしてください (取りこぼし防止)".into(),
+        ));
+    }
+    state
+        .db
+        .set_setting(keys::MEDIA_FETCH_LIMIT, &media_fetch_limit.to_string())?;
+    state.db.set_setting(
+        keys::COMMENT_LOOKBACK_HOURS,
+        &comment_lookback_hours.to_string(),
+    )?;
+    state
+        .db
+        .set_setting(keys::COMMENT_FETCH_LIMIT, &comment_fetch_limit.to_string())?;
+    log::info!(
+        "取得範囲を保存: リール{}件 / 過去{}時間 / コメント上限{}件",
+        media_fetch_limit,
+        comment_lookback_hours,
+        comment_fetch_limit
+    );
+    Ok(())
 }
 
 #[tauri::command]
@@ -109,6 +183,12 @@ pub fn save_polling_interval(state: State<'_, AppState>, secs: u64) -> AppResult
             "ポーリング間隔は{}〜{}秒で指定してください",
             MIN_POLLING_INTERVAL_SECS, MAX_POLLING_INTERVAL_SECS
         )));
+    }
+    // ポーリング間隔 > コメント対象期間 だと取りこぼすため、組み合わせとして拒否する
+    if secs > (state.comment_lookback_hours() as u64) * 3600 {
+        return Err(AppError::Config(
+            "ポーリング間隔はコメント対象期間より短くしてください (取りこぼし防止)".into(),
+        ));
     }
     state
         .db
