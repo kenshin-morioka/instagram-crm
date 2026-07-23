@@ -91,19 +91,39 @@
           迷ったら30秒のままでOKです。
         </p>
         <div class="interval-row">
-          <input
-            id="polling-interval"
-            type="number"
-            min="30"
-            max="43200"
-            step="10"
-            aria-label="ポーリング間隔"
-          />
-          <select id="polling-unit" aria-label="ポーリング間隔の単位">
-            <option value="1">秒</option>
-            <option value="60">分</option>
-            <option value="3600">時間</option>
-          </select>
+          <span class="interval-field">
+            <input
+              id="interval-hours"
+              type="number"
+              min="0"
+              max="12"
+              step="1"
+              aria-label="ポーリング間隔 (時間)"
+            />
+            <span class="unit">時間</span>
+          </span>
+          <span class="interval-field">
+            <input
+              id="interval-minutes"
+              type="number"
+              min="0"
+              max="59"
+              step="1"
+              aria-label="ポーリング間隔 (分)"
+            />
+            <span class="unit">分</span>
+          </span>
+          <span class="interval-field">
+            <input
+              id="interval-seconds"
+              type="number"
+              min="0"
+              max="59"
+              step="10"
+              aria-label="ポーリング間隔 (秒)"
+            />
+            <span class="unit">秒</span>
+          </span>
           <button id="save-interval" class="btn">保存</button>
         </div>
       </section>
