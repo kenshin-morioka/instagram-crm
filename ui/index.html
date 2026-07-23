@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Instagram CRM</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="bg-glow" aria-hidden="true"></div>
+
+    <main>
+      <header class="app-header">
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="5" />
+            <circle cx="12" cy="12" r="4" />
+            <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none" />
+          </svg>
+        </div>
+        <div class="app-title">
+          <h1>Instagram CRM</h1>
+          <p>リールコメントへの自動返信</p>
+        </div>
+      </header>
+
+      <section class="card status-card">
+        <div class="card-label">接続状態</div>
+        <p id="status-line">
+          <span id="status-dot" class="dot"></span>
+          <span id="status-text">確認中...</span>
+          <span id="dry-run-badge" class="badge" hidden>ドライラン中</span>
+          <span id="paused-badge" class="badge badge-warn" hidden>送信停止中</span>
+        </p>
+        <p class="btn-row">
+          <button id="dry-run-button" class="btn btn-small" hidden>ドライランを解除</button>
+          <button id="pause-button" class="btn btn-small" hidden>送信を一時停止</button>
+        </p>
+        <div id="token-form" hidden>
+          <input
+            id="token-input"
+            type="password"
+            placeholder="長期アクセストークンを貼り付け"
+            autocomplete="off"
+          />
+          <button id="connect-button" class="btn btn-gradient">連携する</button>
+          <p class="hint">
+            Meta App Dashboard の「API setup with Instagram login」の
+            トークンジェネレーターで発行できます
+          </p>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-label">返信文</div>
+        <textarea
+          id="reply-text"
+          rows="3"
+          placeholder="例: コメントありがとうございます！&#10;※ 返信文を保存するまで自動返信は動きません"
+        ></textarea>
+        <div class="card-actions">
+          <button id="save-reply" class="btn">保存</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-label">
+          ポーリング間隔
+          <button id="polling-help" class="help-icon" aria-label="ポーリング間隔とは">?</button>
+        </div>
+        <p id="polling-hint" class="hint" hidden>
+          新しいコメントが付いていないか、Instagramへ確認しに行く間隔です。
+          たとえば30秒なら、30秒ごとに新着コメントをチェックして自動返信します。
+          短くするほど返信は速くなりますが、Instagram APIの利用量が増えます。
+          迷ったら30秒のままでOKです。
+        </p>
+        <div class="interval-row">
+          <input id="polling-interval" type="number" min="10" max="3600" step="1" />
+          <span class="unit">秒</span>
+          <button id="save-interval" class="btn">保存</button>
+        </div>
+      </section>
+
+      <section class="card last-run-card">
+        <div class="card-label">最終実行</div>
+        <p id="last-run" class="last-run">-</p>
+      </section>
+    </main>
+
+    <p id="message" class="toast" hidden></p>
+    <script src="main.js"></script>
+  </body>
+</html>
