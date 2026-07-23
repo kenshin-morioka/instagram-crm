@@ -84,7 +84,47 @@
 
 ---
 
-## 3. 品質・安全性について
+## 3. アンインストール
+
+アプリ本体を削除するだけでは、設定やログなどのデータがパソコンに残ります。完全に削除したい場合は以下の手順で行ってください。
+
+### まず: Instagram 側の連携解除（macOS / Windows 共通・推奨）
+
+アクセストークン自体を無効化するため、先に連携を解除しておくと安心です。
+
+- Instagram アプリ: 設定 → アプリとウェブサイト → 該当アプリの連携を解除
+
+### macOS
+
+1. アプリを終了します（メニューバーのアイコン → Quit）
+2. **アプリケーション** フォルダから `Instagram CRM` をゴミ箱に入れます
+3. 残ったデータを削除します。「ターミナル」アプリで以下を実行してください:
+
+   ```sh
+   # 設定・返信履歴・ログ・キャッシュ
+   rm -rf ~/Library/"Application Support"/com.kenshinmorioka.instagram-crm
+   rm -rf ~/Library/Logs/com.kenshinmorioka.instagram-crm
+   rm -rf ~/Library/Caches/com.kenshinmorioka.instagram-crm
+   rm -rf ~/Library/WebKit/com.kenshinmorioka.instagram-crm
+
+   # キーチェーンに保存されたアクセストークン
+   security delete-generic-password -s com.kenshinmorioka.instagram-crm -a instagram-token
+   ```
+
+### Windows
+
+1. アプリを終了します（タスクトレイのアイコン → Quit）
+2. 設定 → アプリ → インストールされているアプリ → `Instagram CRM` → アンインストール
+3. 残ったデータを削除します。エクスプローラーのアドレスバーに以下を貼り付けて開き、`com.kenshinmorioka.instagram-crm` フォルダを削除してください:
+   - `%APPDATA%`（設定・返信履歴）
+   - `%LOCALAPPDATA%`（ログ・WebView データ）
+4. 保存されたアクセストークンを削除します:
+   - コントロールパネル → 資格情報マネージャー → Windows 資格情報 →
+     `com.kenshinmorioka.instagram-crm` を含む項目を削除
+
+---
+
+## 4. 品質・安全性について
 
 安心して使っていただくために、次の方針で作っています。
 
@@ -100,7 +140,7 @@
 
 ---
 
-## 4. Issue・フィードバック歓迎
+## 5. Issue・フィードバック歓迎
 
 このアプリは OSS として公開しています。**気になった点は、どんなことでも気軽に [Issue](https://github.com/kenshin-morioka/instagram-crm/issues) を立ててください。**
 
@@ -112,6 +152,6 @@
 
 ---
 
-## 5. ライセンス
+## 6. ライセンス
 
 [MIT License](LICENSE) で公開しています。改変・再配布は自由ですが、**本ソフトウェアは無保証で提供され、作者は利用によって生じたいかなる損害についても責任を負いません。** 各自の責任のもとでご利用ください。
