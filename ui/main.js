@@ -204,6 +204,12 @@ fetchHelp.addEventListener("click", () => {
   fetchHint.hidden = !fetchHint.hidden;
 });
 
+const replyHelp = document.getElementById("reply-help");
+const replyHint = document.getElementById("reply-hint");
+replyHelp.addEventListener("click", () => {
+  replyHint.hidden = !replyHint.hidden;
+});
+
 // バックエンドの上下限 (state.rs の定数) と同じ値
 const MIN_FETCH_LIMIT = 1;
 const MAX_FETCH_LIMIT = 25;

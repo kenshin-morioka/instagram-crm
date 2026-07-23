@@ -77,7 +77,17 @@
       </section>
 
       <section class="card">
-        <div class="card-label">返信文</div>
+        <div class="card-label">
+          返信文
+          <button id="reply-help" class="help-icon" aria-label="自動返信の安全性について">?</button>
+        </div>
+        <p id="reply-hint" class="hint" hidden>
+          「自動返信に対して、また自動返信してしまう」ことは起きない仕組みになっています:
+          ① 反応するのはリールに直接付いたコメントだけです。このアプリが送った返信や、
+          その返信に付いたコメントには反応しません。
+          ② 自分のコメントには返信しません。
+          ③ 同じコメントに2回返信することはありません。
+        </p>
         <textarea
           id="reply-text"
           rows="3"
