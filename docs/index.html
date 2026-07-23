@@ -400,7 +400,7 @@
   <section class="reveal">
     <h2>使い方</h2>
     <ol class="steps">
-      <li><strong>アプリをインストール</strong> — 上のダウンロードボタンを押すと、お使いのOSに合ったインストーラー (macOS: <code>.dmg</code> / Windows: <code>.msi</code>) がダウンロードされます。</li>
+      <li><strong>アプリをインストール</strong> — 上のダウンロードボタンを押すと、お使いのOSに合ったインストーラー (macOS: <code>.dmg</code> / Windows: <code>.msi</code>) がダウンロードされます。macOSで「"Instagram CRM.app"は壊れているため開けません」と表示される場合は、Apple未公証のアプリをブラウザ経由でダウンロードした際にmacOSが表示する既知の警告です。ターミナルで以下を実行してから開いてください。<br><code>xattr -cr "/Applications/Instagram CRM.app"</code></li>
       <li><strong>Metaのアクセストークンを発行</strong> — Instagramのプロアカウント（ビジネス/クリエイター）が必要です。手順は <a href="https://github.com/kenshin-morioka/instagram-crm/blob/main/doc/META_SETUP.md">META_SETUP.md</a> を参照してください。</li>
       <li><strong>アプリと連携</strong> — 発行したトークンをアプリに貼り付けて「連携する」を押します。</li>
       <li><strong>ドライランで動作確認</strong> — しばらく動かし、返信対象が意図どおりかログで確認します。</li>
