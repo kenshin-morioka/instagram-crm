@@ -30,6 +30,7 @@ const truncatedNote = document.getElementById("truncated-note");
 const cycleSummary = document.getElementById("cycle-summary");
 const fetchLimit = document.getElementById("fetch-limit");
 const lookbackHours = document.getElementById("lookback-hours");
+const commentLimit = document.getElementById("comment-limit");
 const saveFetch = document.getElementById("save-fetch");
 const fetchHelp = document.getElementById("fetch-help");
 const fetchHint = document.getElementById("fetch-hint");
@@ -130,6 +131,7 @@ async function loadSettings() {
   displayInterval(settings.polling_interval_secs);
   fetchLimit.value = settings.media_fetch_limit;
   lookbackHours.value = settings.comment_lookback_hours;
+  commentLimit.value = settings.comment_fetch_limit;
 }
 
 connectButton.addEventListener("click", async () => {
@@ -207,10 +209,13 @@ const MIN_FETCH_LIMIT = 1;
 const MAX_FETCH_LIMIT = 25;
 const MIN_LOOKBACK_HOURS = 1;
 const MAX_LOOKBACK_HOURS = 168;
+const MIN_COMMENT_LIMIT = 50;
+const MAX_COMMENT_LIMIT = 1000;
 
 saveFetch.addEventListener("click", async () => {
   const limit = Number(fetchLimit.value);
   const hours = Number(lookbackHours.value);
+  const comments = Number(commentLimit.value);
   // 小数や数値以外はバックエンドのserdeエラー (英語) がそのまま出るため先に弾く
   if (!Number.isInteger(limit) || limit < MIN_FETCH_LIMIT || limit > MAX_FETCH_LIMIT) {
     showMessage(`対象リール数は${MIN_FETCH_LIMIT}〜${MAX_FETCH_LIMIT}件で入力してください`);
@@ -222,10 +227,21 @@ saveFetch.addEventListener("click", async () => {
     );
     return;
   }
+  if (
+    !Number.isInteger(comments) ||
+    comments < MIN_COMMENT_LIMIT ||
+    comments > MAX_COMMENT_LIMIT
+  ) {
+    showMessage(
+      `コメント確認上限は${MIN_COMMENT_LIMIT}〜${MAX_COMMENT_LIMIT}件で入力してください`
+    );
+    return;
+  }
   try {
     await invoke("save_fetch_settings", {
       mediaFetchLimit: limit,
       commentLookbackHours: hours,
+      commentFetchLimit: comments,
     });
     showMessage("取得範囲を保存しました");
   } catch (e) {

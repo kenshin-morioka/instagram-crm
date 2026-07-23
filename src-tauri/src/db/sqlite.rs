@@ -20,6 +20,8 @@ pub mod keys {
     pub const MEDIA_FETCH_LIMIT: &str = "media_fetch_limit";
     /// 何時間前までのコメントを返信対象とするか: UIから保存した値。未設定なら設定ファイルの初期値
     pub const COMMENT_LOOKBACK_HOURS: &str = "comment_lookback_hours";
+    /// 1リールあたりで確認するコメント件数の上限: UIから保存した値。未設定なら設定ファイルの初期値
+    pub const COMMENT_FETCH_LIMIT: &str = "comment_fetch_limit";
     /// 直近の成功した周期の集計 (UI表示用。例: "コメント32件を確認 / 返信2件")
     pub const LAST_CYCLE_SUMMARY: &str = "last_cycle_summary";
 }

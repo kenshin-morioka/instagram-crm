@@ -146,11 +146,12 @@
           <button id="fetch-help" class="help-icon" aria-label="取得範囲とは">?</button>
         </div>
         <p id="fetch-hint" class="hint" hidden>
-          毎回のチェックで「最近のリール何件」の「何時間前までのコメント」を確認するかの設定です。
-          リール数を増やすと古い投稿へのコメントにも反応できますが、Instagram APIの利用量が増えます。
+          毎回のチェックで「最近のリール何件」の「何時間前までのコメント」を
+          「1リールあたり何件まで」確認するかの設定です。
+          リール数やコメント上限を増やすと確認漏れが減りますが、Instagram APIの利用量が増えます。
           対象期間より古いコメントには返信しません
           (ポーリング間隔より短くすると取りこぼすため、間隔より長くしてください)。
-          迷ったら初期値 (10件・24時間) のままでOKです。
+          迷ったら初期値 (リール10件・過去24時間・コメント上限200件) のままでOKです。
         </p>
         <div class="interval-row">
           <span class="interval-field">
@@ -176,6 +177,20 @@
               aria-label="コメント対象期間 (時間)"
             />
             <span class="unit">時間</span>
+          </span>
+        </div>
+        <div class="interval-row">
+          <span class="interval-field">
+            <span class="unit">コメント上限 1リールあたり</span>
+            <input
+              id="comment-limit"
+              type="number"
+              min="50"
+              max="1000"
+              step="50"
+              aria-label="1リールあたりのコメント確認上限 (件)"
+            />
+            <span class="unit">件</span>
           </span>
           <button id="save-fetch" class="btn">保存</button>
         </div>

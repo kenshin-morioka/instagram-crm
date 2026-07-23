@@ -22,6 +22,12 @@ pub const MAX_MEDIA_FETCH_LIMIT: u32 = 25;
 pub const MIN_LOOKBACK_HOURS: i64 = 1;
 pub const MAX_LOOKBACK_HOURS: i64 = 7 * 24;
 
+/// 1リールあたりで確認するコメント件数上限の範囲。
+/// 下限50はAPIの1ページ分。上限1000はコメント総数の多いリールで
+/// 毎周期のAPI消費が際限なく増えるのを防ぐため
+pub const MIN_COMMENT_FETCH_LIMIT: u32 = 50;
+pub const MAX_COMMENT_FETCH_LIMIT: u32 = 1000;
+
 pub struct AppState {
     pub config: AppConfig,
     pub db: Db,
@@ -116,6 +122,18 @@ impl AppState {
             .and_then(|v| v.parse::<i64>().ok())
             .unwrap_or(self.config.comment_lookback_hours)
             .clamp(MIN_LOOKBACK_HOURS, MAX_LOOKBACK_HOURS)
+    }
+
+    /// 1リールあたりで確認するコメント件数の上限。UIで保存された値 (SQLite) を優先し、
+    /// なければ設定ファイルの初期値を使う
+    pub fn comment_fetch_limit(&self) -> u32 {
+        self.db
+            .get_setting(keys::COMMENT_FETCH_LIMIT)
+            .ok()
+            .flatten()
+            .and_then(|v| v.parse::<u32>().ok())
+            .unwrap_or(self.config.comment_fetch_limit)
+            .clamp(MIN_COMMENT_FETCH_LIMIT, MAX_COMMENT_FETCH_LIMIT)
     }
 
     /// ポーリング中の進捗表示 (UI用)
@@ -418,6 +436,24 @@ mod tests {
             .set_setting(keys::COMMENT_LOOKBACK_HOURS, "9999")
             .unwrap();
         assert_eq!(state.comment_lookback_hours(), MAX_LOOKBACK_HOURS);
+    }
+
+    #[test]
+    fn comment_fetch_limit_falls_back_prefers_db_and_clamps() {
+        let state = state_with(None);
+        assert_eq!(state.comment_fetch_limit(), 200, "設定ファイル初期値");
+        state
+            .db
+            .set_setting(keys::COMMENT_FETCH_LIMIT, "500")
+            .unwrap();
+        assert_eq!(state.comment_fetch_limit(), 500, "UIで保存した値が優先");
+        state.db.set_setting(keys::COMMENT_FETCH_LIMIT, "1").unwrap();
+        assert_eq!(state.comment_fetch_limit(), MIN_COMMENT_FETCH_LIMIT);
+        state
+            .db
+            .set_setting(keys::COMMENT_FETCH_LIMIT, "99999")
+            .unwrap();
+        assert_eq!(state.comment_fetch_limit(), MAX_COMMENT_FETCH_LIMIT);
     }
 
     #[test]

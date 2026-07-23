@@ -15,11 +15,7 @@ const ERROR_CODE_OAUTH: i64 = 190;
 /// (4: アプリ制限, 17: ユーザー制限, 32: ページ制限, 613: カスタム制限)
 const RATE_LIMIT_ERROR_CODES: [i64; 4] = [4, 17, 32, 613];
 
-/// コメント取得で追う最大ページ数 (50件/ページ → 最大200件/メディア/周期)。
-/// 上限なしだとコメント総数の多いリールで毎周期のAPI消費が爆発するため打ち切る
-const MAX_COMMENT_PAGES: usize = 4;
-
-/// fetch_commentsの結果。truncated=trueならページ上限で打ち切られている
+/// fetch_commentsの結果。truncated=trueなら件数上限で打ち切られている
 #[derive(Debug)]
 pub struct CommentsPage {
     pub comments: Vec<Comment>,
@@ -161,18 +157,20 @@ impl InstagramClient {
     }
 
     /// メディアに付いたトップレベルコメントを取得する。
-    /// 50件を超える場合はページを追い、MAX_COMMENT_PAGESで打ち切る
+    /// 50件を超える場合はページを追い、max_comments件に達したら打ち切る
     /// (コメント総数の多いリールで毎周期のAPI消費が際限なく増えるのを防ぐ)。
+    /// ページ単位 (50件) で取得するため、実際の件数はmax_commentsを最大49件超えうる。
     /// truncated=trueなら上限で打ち切られており、未取得のコメントが残っている
     pub async fn fetch_comments(
         &self,
         access_token: &str,
         media_id: &str,
+        max_comments: u32,
     ) -> AppResult<CommentsPage> {
         let mut comments: Vec<Comment> = Vec::new();
         let mut next_url: Option<String> = None;
 
-        for page in 0..MAX_COMMENT_PAGES {
+        loop {
             let request = match &next_url {
                 // paging.nextはGraph APIが返す完全なURL (クエリ込み) をそのまま使う
                 Some(url) => self.http.get(url),
@@ -189,13 +187,14 @@ impl InstagramClient {
             if next_url.is_none() {
                 break;
             }
-            if page + 1 == MAX_COMMENT_PAGES {
+            if comments.len() >= max_comments as usize {
                 log::warn!(
-                    "media_id={} のコメントが{}ページ ({}件) を超えています。超過分はこの周期では処理されません",
+                    "media_id={} のコメントが上限{}件 (取得済み{}件) を超えています。超過分はこの周期では処理されません",
                     media_id,
-                    MAX_COMMENT_PAGES,
+                    max_comments,
                     comments.len()
                 );
+                break;
             }
         }
 

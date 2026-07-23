@@ -7,8 +7,9 @@ use crate::db::keys;
 use crate::error::{AppError, AppResult};
 use crate::models::{ConnectionStatus, TokenInfo};
 use crate::state::{
-    AppState, MAX_LOOKBACK_HOURS, MAX_MEDIA_FETCH_LIMIT, MAX_POLLING_INTERVAL_SECS,
-    MIN_LOOKBACK_HOURS, MIN_MEDIA_FETCH_LIMIT, MIN_POLLING_INTERVAL_SECS,
+    AppState, MAX_COMMENT_FETCH_LIMIT, MAX_LOOKBACK_HOURS, MAX_MEDIA_FETCH_LIMIT,
+    MAX_POLLING_INTERVAL_SECS, MIN_COMMENT_FETCH_LIMIT, MIN_LOOKBACK_HOURS,
+    MIN_MEDIA_FETCH_LIMIT, MIN_POLLING_INTERVAL_SECS,
 };
 
 /// App Dashboardで発行される長期トークンの有効期間 (60日)。
@@ -54,6 +55,7 @@ pub struct SettingsPayload {
     pub polling_interval_secs: u64,
     pub media_fetch_limit: u32,
     pub comment_lookback_hours: i64,
+    pub comment_fetch_limit: u32,
 }
 
 #[tauri::command]
@@ -104,20 +106,28 @@ pub fn get_settings(state: State<'_, AppState>) -> SettingsPayload {
         polling_interval_secs: state.polling_interval_secs(),
         media_fetch_limit: state.media_fetch_limit(),
         comment_lookback_hours: state.comment_lookback_hours(),
+        comment_fetch_limit: state.comment_fetch_limit(),
     }
 }
 
-/// 取得範囲の設定: 対象リール数と、何時間前までのコメントを対象とするか
+/// 取得範囲の設定: 対象リール数・コメント対象期間・1リールあたりのコメント確認上限
 #[tauri::command]
 pub fn save_fetch_settings(
     state: State<'_, AppState>,
     media_fetch_limit: u32,
     comment_lookback_hours: i64,
+    comment_fetch_limit: u32,
 ) -> AppResult<()> {
     if !(MIN_MEDIA_FETCH_LIMIT..=MAX_MEDIA_FETCH_LIMIT).contains(&media_fetch_limit) {
         return Err(AppError::Config(format!(
             "対象リール数は{}〜{}件で指定してください",
             MIN_MEDIA_FETCH_LIMIT, MAX_MEDIA_FETCH_LIMIT
+        )));
+    }
+    if !(MIN_COMMENT_FETCH_LIMIT..=MAX_COMMENT_FETCH_LIMIT).contains(&comment_fetch_limit) {
+        return Err(AppError::Config(format!(
+            "コメント確認上限は{}〜{}件で指定してください",
+            MIN_COMMENT_FETCH_LIMIT, MAX_COMMENT_FETCH_LIMIT
         )));
     }
     if !(MIN_LOOKBACK_HOURS..=MAX_LOOKBACK_HOURS).contains(&comment_lookback_hours) {
@@ -140,10 +150,14 @@ pub fn save_fetch_settings(
         keys::COMMENT_LOOKBACK_HOURS,
         &comment_lookback_hours.to_string(),
     )?;
+    state
+        .db
+        .set_setting(keys::COMMENT_FETCH_LIMIT, &comment_fetch_limit.to_string())?;
     log::info!(
-        "取得範囲を保存: リール{}件 / 過去{}時間",
+        "取得範囲を保存: リール{}件 / 過去{}時間 / コメント上限{}件",
         media_fetch_limit,
-        comment_lookback_hours
+        comment_lookback_hours,
+        comment_fetch_limit
     );
     Ok(())
 }

@@ -99,7 +99,7 @@ pub async fn run_cycle(state: &AppState, http: &reqwest::Client) -> AppResult<Cy
         )));
         let page = state
             .ig
-            .fetch_comments(&token.access_token, &media.id)
+            .fetch_comments(&token.access_token, &media.id, state.comment_fetch_limit())
             .await?;
         let comments = page.comments;
         any_truncated |= page.truncated;
