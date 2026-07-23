@@ -12,6 +12,7 @@ const connectButton = document.getElementById("connect-button");
 const replyText = document.getElementById("reply-text");
 const saveReply = document.getElementById("save-reply");
 const pollingInterval = document.getElementById("polling-interval");
+const pollingUnit = document.getElementById("polling-unit");
 const saveInterval = document.getElementById("save-interval");
 const lastRun = document.getElementById("last-run");
 const pollingHelp = document.getElementById("polling-help");
@@ -69,10 +70,34 @@ async function refreshStatus() {
   }
 }
 
+// バックエンドの下限30秒・上限12時間 (state.rs の定数) に合わせた単位別の入力制限
+const MAX_INTERVAL_SECS = 43200;
+const UNIT_LIMITS = {
+  1: { min: 30, step: 10 },
+  60: { min: 1, step: 1 },
+  3600: { min: 1, step: 1 },
+};
+
+function applyUnitLimits() {
+  const unit = Number(pollingUnit.value);
+  const limits = UNIT_LIMITS[unit];
+  pollingInterval.min = limits.min;
+  pollingInterval.step = limits.step;
+  pollingInterval.max = MAX_INTERVAL_SECS / unit;
+}
+
+// 秒数を割り切れる最大の単位 (時間 > 分 > 秒) で表示する
+function displayInterval(secs) {
+  const unit = secs % 3600 === 0 ? 3600 : secs % 60 === 0 ? 60 : 1;
+  pollingUnit.value = String(unit);
+  pollingInterval.value = secs / unit;
+  applyUnitLimits();
+}
+
 async function loadSettings() {
   const settings = await invoke("get_settings");
   replyText.value = settings.reply_text;
-  pollingInterval.value = settings.polling_interval_secs;
+  displayInterval(settings.polling_interval_secs);
 }
 
 connectButton.addEventListener("click", async () => {
@@ -141,13 +166,16 @@ pollingHelp.addEventListener("click", () => {
   pollingHint.hidden = !pollingHint.hidden;
 });
 
+pollingUnit.addEventListener("change", applyUnitLimits);
+
 saveInterval.addEventListener("click", async () => {
-  const secs = Number(pollingInterval.value);
+  const value = Number(pollingInterval.value);
   // 小数や数値以外はバックエンドのserdeエラー (英語) がそのまま出るため先に弾く
-  if (!Number.isInteger(secs)) {
-    showMessage("ポーリング間隔は整数の秒数で入力してください");
+  if (!Number.isInteger(value)) {
+    showMessage("ポーリング間隔は整数で入力してください");
     return;
   }
+  const secs = value * Number(pollingUnit.value);
   try {
     await invoke("save_polling_interval", { secs });
     showMessage("ポーリング間隔を保存しました");
