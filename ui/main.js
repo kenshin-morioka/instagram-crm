@@ -3,6 +3,9 @@ const { getVersion } = window.__TAURI__.app;
 const { check: checkUpdate } = window.__TAURI__.updater;
 const { relaunch } = window.__TAURI__.process;
 const { openUrl } = window.__TAURI__.opener;
+// window.confirm はmacOSのWebView (WKWebView) で未実装のため、
+// 何も表示されず常にfalseが返る。プラグインのネイティブダイアログを使う
+const { confirm } = window.__TAURI__.dialog;
 
 const statusDot = document.getElementById("status-dot");
 const statusText = document.getElementById("status-text");
@@ -157,7 +160,10 @@ connectButton.addEventListener("click", async () => {
 dryRunButton.addEventListener("click", async () => {
   if (
     dryRun &&
-    !confirm("実送信を開始すると、対象コメントへの実際の自動返信が始まります。よろしいですか？")
+    !(await confirm("実送信を開始すると、対象コメントへの実際の自動返信が始まります。よろしいですか？", {
+      title: "実送信の開始",
+      kind: "warning",
+    }))
   ) {
     return;
   }
@@ -175,7 +181,10 @@ dryRunButton.addEventListener("click", async () => {
 pauseButton.addEventListener("click", async () => {
   if (
     sendingPaused &&
-    !confirm("送信を再開すると、対象コメントへの自動返信が再び始まります。よろしいですか？")
+    !(await confirm("送信を再開すると、対象コメントへの自動返信が再び始まります。よろしいですか？", {
+      title: "送信の再開",
+      kind: "warning",
+    }))
   ) {
     return;
   }
