@@ -144,7 +144,7 @@
   header.hero p.tagline {
     color: var(--muted);
     font-size: 1.12rem;
-    max-width: 560px;
+    max-width: 720px;
     margin: 0 auto 36px;
   }
   .cta-row {
@@ -290,17 +290,18 @@
     gap: 14px;
   }
   .safety li {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
+    position: relative;
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 16px 18px;
+    padding: 16px 18px 16px 52px;
+    overflow-wrap: anywhere;
   }
   .safety li::before {
     content: "✓";
-    flex-shrink: 0;
+    position: absolute;
+    left: 18px;
+    top: 18px;
     width: 22px;
     height: 22px;
     border-radius: 50%;
@@ -411,7 +412,7 @@
   <section class="safety reveal">
     <h2>安全性について</h2>
     <ul>
-      <li>要求する権限はコメントの取得・返信に必要な2つのみ（<code>instagram_business_basic</code>, <code>instagram_business_manage_comments</code>）</li>
+      <li>要求する権限はコメントの取得・返信に必要な2つのみ<br><code>instagram_business_basic</code>, <code>instagram_business_manage_comments</code></li>
       <li>トークンの実値・コメント本文・ユーザー名はログに出力しません</li>
       <li>第三者が参照できる静的レビュー（規約準拠の観点）の結果は <a href="https://github.com/kenshin-morioka/instagram-crm/blob/main/doc/COMPLIANCE_AUDIT.md">COMPLIANCE_AUDIT.md</a> で公開しています</li>
     </ul>
