@@ -1,67 +1,137 @@
 # Instagram CRM
 
-自分のInstagramリールに付いたコメントへ、公式Graph APIで定型文を自動返信するローカル常駐アプリ (Rust / Tauri 2)。
+自分の Instagram リールに付いたコメントへ、公式 API を使って定型文を自動返信するアプリです。パソコンに常駐して、新しいコメントを一定間隔でチェックし、条件に合うものへ返信します。
 
-- Meta公式API (`graph.instagram.com`) のみ使用。スクレイピング・非公式API・ブラウザ自動化は不使用
-- サーバーレス (ポーリング方式、既定30秒)
-- トークンはOSのKeychain / Credential Managerに保存
-- **既定はドライラン** (返信対象をログに出すだけで送信しない)
-- **対応OS: macOS / Windows のみ** (トークン保存が両OSのネイティブ機構前提のため、Linuxでは動作しない)
+- **公式 API のみ使用** — Meta 公式の Instagram API (`graph.instagram.com`) だけを使います。スクレイピングや非公式 API、ブラウザ自動操作は一切使いません
+- **安全** — アクセストークンは OS 標準の保管領域 (macOS: キーチェーン / Windows: 資格情報マネージャー) に保存します
+- **まずは安全確認から** — 初期状態は「ドライラン」(返信せずログに出すだけ)。実際に送信を始めるにはボタンを押す必要があります
+- **対応 OS: macOS / Windows** — Linux では動作しません (トークン保存が両 OS のネイティブ機構前提のため)
 
-## セットアップ
+> 個人が自分のアカウント運用を効率化する目的のツールです。利用にあたっては Instagram / Meta の各種規約を守ってお使いください。
 
-1. Meta側の準備は [doc/META_SETUP.md](doc/META_SETUP.md) を参照 (プロアカウント・Metaアプリ・長期トークン発行)
-2. ビルドと起動 (開発時):
+---
 
-   ```sh
-   cd src-tauri
-   cargo run
-   ```
+## 1. インストール
 
-   配布・日常利用にはmacOSアプリとしてビルドする (ターミナルなしで起動できる):
+### 事前に必要なもの
 
-   ```sh
-   npx @tauri-apps/cli build
-   # → src-tauri/target/release/bundle/macos/Instagram CRM.app
-   # アプリケーションフォルダへコピーして使う
-   ```
+- **Instagram のプロアカウント** (ビジネス または クリエイター)。個人アカウントのままでは API を利用できません
+- **Meta 側の準備**（アプリ登録・アクセストークンの発行）。手順は [doc/META_SETUP.md](doc/META_SETUP.md) にまとめています。少し手間ですが、一度だけ行えば大丈夫です
 
-3. アプリの「接続状態」欄に長期アクセストークンを貼り付けて「連携する」
-4. ドライランのまま数周期動かし、ログの `[DRY RUN]` で対象判定を確認
-5. 問題なければアプリUIの「ドライランを解除」ボタンを押す (実送信が始まる)
+### macOS
 
-## 設定ファイル
+1. [Releases ページ](https://github.com/kenshin-morioka/instagram-crm/releases) を開き、最新版の `.dmg` ファイルをダウンロードします
+2. ダウンロードした `.dmg` を開き、`Instagram CRM` を **アプリケーション** フォルダにドラッグします
+3. アプリを初めて起動するとき、「開発元を確認できないため開けません」と表示される場合があります。その場合は **アプリのアイコンを右クリック → 「開く」** を選び、確認ダイアログで再度「開く」を押してください（初回のみ）
 
-場所: `~/Library/Application Support/com.kenshinmorioka.instagram-crm/config.json` (macOS)。
-初回起動時に自動生成される。全項目は [config.example.json](config.example.json) を参照。
+### Windows
 
-| キー | 既定 | 説明 |
+1. [Releases ページ](https://github.com/kenshin-morioka/instagram-crm/releases) を開き、最新版の `.msi`（インストーラー）をダウンロードします
+2. ダウンロードしたファイルをダブルクリックし、画面の指示に従ってインストールします
+3. 起動時に「WindowsによってPCが保護されました」と表示される場合は、**「詳細情報」→「実行」** の順にクリックしてください（初回のみ）
+
+> ⚠️ 上記の警告は、アプリに有償の署名証明書を付けていないために表示されるものです。表示が不安な場合は、下記の「開発者向け: ソースからビルドする」の方法で自分でビルドすることもできます。
+
+---
+
+## 2. 使い方
+
+### ① Meta のアクセストークンを用意する
+
+[doc/META_SETUP.md](doc/META_SETUP.md) の手順に沿って、**長期アクセストークン（60日有効）** を発行します。付与する権限は次の 2 つだけです。
+
+- `instagram_business_basic`
+- `instagram_business_manage_comments`
+
+### ② アプリと連携する
+
+1. アプリを起動します
+2. 「接続状態」欄に、①で発行したアクセストークンを貼り付けます
+3. 「連携する」ボタンを押します。連携に成功すると状態が表示されます
+
+### ③ ドライランで動作を確認する（重要）
+
+初期状態は **ドライラン（返信を送らず、対象だけログに記録するモード）** です。まずはこのまま数分〜数十分動かし、返信されるはずのコメントが意図どおりか、ログの `[DRY RUN]` 行で確認してください。
+
+ログの場所:
+
+- macOS: `~/Library/Logs/com.kenshinmorioka.instagram-crm/instagram-crm.log`
+- Windows: `%LOCALAPPDATA%\com.kenshinmorioka.instagram-crm\logs\`
+
+### ④ 実際の返信を始める
+
+確認できたら、アプリの **「ドライランを解除」** ボタンを押します。これ以降、条件に合うコメントへ実際に返信が送られます。
+
+### 返信する条件を絞り込む（任意）
+
+「全部に返信すると困る」場合は、下記の設定で対象を絞れます。設定ファイルは初回起動時に自動作成されます。
+
+場所（macOS）: `~/Library/Application Support/com.kenshinmorioka.instagram-crm/config.json`
+
+| 設定 | 既定 | 説明 |
 |---|---|---|
-| `meta_graph_api_version` | v25.0 | Graph APIバージョン |
-| `dry_run` | **true** | 初期値。以降はアプリUIの「ドライランを解除」ボタンで切り替える。解除後、`comment_lookback_hours` 内に検出済みのコメントには返信される |
-| `allowed_media_ids` | [] | 返信対象リールの限定 (空=全リール) |
-| `reply_keywords` | [] | 本文にいずれかを含む場合のみ返信 (空=全件) |
+| `allowed_media_ids` | （空） | 返信対象のリールを限定する（空 = 全リール） |
+| `reply_keywords` | （空） | コメント本文に指定した語を含む場合だけ返信（空 = 全件） |
 | `comment_lookback_hours` | 24 | これより古いコメントは対象外 |
 | `max_comment_length` | 500 | これより長いコメントは対象外 |
-| `usage_pause_threshold_pct` | 90 | API使用量がこの%を超えたら送信を一時停止 |
+| `usage_pause_threshold_pct` | 90 | API 使用量がこの % を超えたら送信を一時停止 |
 
-返信文とポーリング間隔はアプリのUIから変更する。
+返信文とチェック間隔（ポーリング間隔）は、アプリの画面から変更できます。全項目は [config.example.json](config.example.json) を参照してください。
 
-## 運用
+### 困ったとき
 
-障害対応・kill switch・トークン失効時の手順は [doc/OPERATIONS_RUNBOOK.md](doc/OPERATIONS_RUNBOOK.md) を参照。
-規約準拠の監査結果は [doc/COMPLIANCE_AUDIT.md](doc/COMPLIANCE_AUDIT.md) を参照。
+トークンが切れた・返信を止めたい（kill switch）などの対処は [doc/OPERATIONS_RUNBOOK.md](doc/OPERATIONS_RUNBOOK.md) を参照してください。
 
-## テスト
+---
+
+## 3. 品質・安全性について
+
+安心して使っていただくために、次の方針で作っています。
+
+- **公式 API のみ** — 外部への通信は Meta 公式 API (`graph.instagram.com`) だけ。非公式 API・スクレイピング・ブラウザ自動操作は使いません
+- **最小限の権限** — 要求する権限はコメントの取得・返信に必要な 2 つのみ。投稿の公開やメッセージ送信の権限は要求しません
+- **トークンを安全に保管** — アクセストークンは OS 標準の保管領域に保存します。設定ファイルやログには書き出しません
+- **初期状態はドライラン** — 誤送信を防ぐため、明示的にボタンを押すまで実際の返信は行いません
+- **二重返信を防止** — 一度返信したコメントは記録し、同じコメントへ重複して返信しません
+- **プライバシーに配慮したログ** — トークンの実値・コメント本文・ユーザー名はログに出力しません
+- **API 制限への配慮** — レート制限（HTTP 429）に対して自動でバックオフし、使用量がしきい値を超えると自動で一時停止します
+
+第三者が参照できる静的レビュー（規約準拠の観点）の結果は [doc/COMPLIANCE_AUDIT.md](doc/COMPLIANCE_AUDIT.md) にまとめています。
+
+---
+
+## 4. 開発者向け: ソースからビルドする
+
+配布版を使わず自分でビルドしたい場合や、開発に参加する場合は以下の通りです。[Rust](https://www.rust-lang.org/) と [Node.js](https://nodejs.org/) が必要です。
+
+```sh
+# 開発時の起動
+cd src-tauri
+cargo run
+
+# 配布用アプリのビルド
+npx @tauri-apps/cli build
+# → macOS: src-tauri/target/release/bundle/dmg/ 以下
+# → Windows: src-tauri/target/release/bundle/msi/ 以下
+```
+
+テストの実行（実 API への送信は行わず、すべてローカルで完結します）:
 
 ```sh
 cd src-tauri
 cargo test
 ```
 
-実APIへの送信は行わない (全てローカルのユニットテスト)。
+設計方針は [doc/design_doc.md](doc/design_doc.md) を参照してください。
 
-## ログ
+---
 
-- macOS: `~/Library/Logs/com.kenshinmorioka.instagram-crm/instagram-crm.log`
-- トークン・コメント本文・ユーザー名はログに出力しない
+## 5. Issue・フィードバック歓迎
+
+このアプリは OSS として公開しています。**気になった点は、どんなことでも気軽に [Issue](https://github.com/kenshin-morioka/instagram-crm/issues) を立ててください。**
+
+- 「インストールでつまずいた」「この説明が分かりにくい」といった **初歩的な内容でも大歓迎** です
+- バグ報告・機能要望・改善提案、いずれも歓迎します
+- 「こういう使い方をしたい」という相談も気軽にどうぞ
+
+プルリクエストも歓迎します 🙌
