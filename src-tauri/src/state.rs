@@ -5,7 +5,9 @@ use crate::config::AppConfig;
 use crate::db::{keys, Db};
 use crate::models::{ConnectionStatus, TokenInfo};
 
-pub const MIN_POLLING_INTERVAL_SECS: u64 = 10;
+/// 下限を30秒にしているのは、Instagram Graph APIのレート制限
+/// (アプリ・アカウント単位の時間あたり呼び出し数) に達しにくくするため
+pub const MIN_POLLING_INTERVAL_SECS: u64 = 30;
 pub const MAX_POLLING_INTERVAL_SECS: u64 = 3600;
 
 pub struct AppState {
