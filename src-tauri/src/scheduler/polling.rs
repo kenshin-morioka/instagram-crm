@@ -22,6 +22,9 @@ pub fn spawn(app: AppHandle) {
             let base_interval = state.polling_interval_secs();
 
             if state.status() == ConnectionStatus::Connected {
+                // 周期実行中の再連携で有効になった新トークンを、旧トークンの失効エラーで
+                // NeedsReauthに上書きしないよう、実行前のトークンを控えておく
+                let token_before_cycle = state.token().map(|t| t.access_token);
                 match auto_reply::run_cycle(&state, &http).await {
                     Ok(report) => {
                         backoff_level = 0;
@@ -50,9 +53,17 @@ pub fn spawn(app: AppHandle) {
                     Err(AppError::TokenExpired) => {
                         backoff_level = 0;
                         retry_after = None;
-                        state.set_status(ConnectionStatus::NeedsReauth);
-                        log::error!("OAuth期限切れ: トークンの再設定が必要です");
-                        show_main_window(&app);
+                        // 周期中にトークンが差し替わっていれば失効したのは旧トークン。
+                        // 新トークンでの接続状態を維持し、次周期に判断を委ねる
+                        if state.token().map(|t| t.access_token) != token_before_cycle {
+                            log::warn!(
+                                "周期実行中にトークンが再設定されたため、再連携要求をスキップします"
+                            );
+                        } else {
+                            state.set_status(ConnectionStatus::NeedsReauth);
+                            log::error!("トークン期限切れ: トークンの再設定が必要です");
+                            show_main_window(&app);
+                        }
                     }
                     Err(e) => {
                         // 一時的なAPIエラーはログのみ残し、次回ポーリングで再試行する

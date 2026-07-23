@@ -38,6 +38,7 @@ function showMessage(text) {
 
 let sendingPaused = false;
 let dryRun = true;
+let connecting = false;
 
 function renderStatus(payload) {
   const view = STATUS_VIEW[payload.status] ?? STATUS_VIEW.not_connected;
@@ -59,6 +60,8 @@ function renderStatus(payload) {
 }
 
 async function refreshStatus() {
+  // トークン検証中の表示を周期更新で「未接続」へ巻き戻さない
+  if (connecting) return;
   try {
     renderStatus(await invoke("get_status"));
   } catch (e) {
@@ -73,16 +76,20 @@ async function loadSettings() {
 }
 
 connectButton.addEventListener("click", async () => {
+  connecting = true;
   connectButton.disabled = true;
   statusText.textContent = "トークンを検証しています...";
   try {
     renderStatus(await invoke("connect_with_token", { token: tokenInput.value }));
-    tokenInput.value = "";
     showMessage("Instagramと連携しました");
   } catch (e) {
     showMessage(String(e));
+    connecting = false;
     await refreshStatus();
   } finally {
+    // 失敗時も含めトークンを入力欄に残さない
+    tokenInput.value = "";
+    connecting = false;
     connectButton.disabled = false;
   }
 });
@@ -135,8 +142,14 @@ pollingHelp.addEventListener("click", () => {
 });
 
 saveInterval.addEventListener("click", async () => {
+  const secs = Number(pollingInterval.value);
+  // 小数や数値以外はバックエンドのserdeエラー (英語) がそのまま出るため先に弾く
+  if (!Number.isInteger(secs)) {
+    showMessage("ポーリング間隔は整数の秒数で入力してください");
+    return;
+  }
   try {
-    await invoke("save_polling_interval", { secs: Number(pollingInterval.value) });
+    await invoke("save_polling_interval", { secs });
     showMessage("ポーリング間隔を保存しました");
   } catch (e) {
     showMessage(String(e));

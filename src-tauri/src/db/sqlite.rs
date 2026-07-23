@@ -128,6 +128,24 @@ impl Db {
         })
     }
 
+    /// このコメントが再試行待ち (queued) か。
+    /// 再試行では前回の送信が実は成功していた可能性があるため、
+    /// 送信前に返信一覧を確認する判断に使う
+    pub fn is_queued(&self, comment_id: &str) -> AppResult<bool> {
+        let conn = self.conn()?;
+        let status: Option<Option<String>> = conn
+            .query_row(
+                "SELECT status FROM comments WHERE comment_id = ?1",
+                params![comment_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        Ok(matches!(
+            status,
+            Some(Some(s)) if s == reply_status::QUEUED
+        ))
+    }
+
     /// 送信前にコメントを処理中として確保する。
     /// 未記録・queued・dry_runの場合のみ確保でき、成功時にtrueを返す (二重送信防止)
     pub fn try_begin_reply(
@@ -208,6 +226,36 @@ impl Db {
             params![reply_status::QUEUED, comment_id, reply_status::PROCESSING],
         )?;
         Ok(())
+    }
+
+    /// 一時エラーの再試行キューへ戻す。ただし試行回数が上限に達していたら
+    /// failedにして打ち切る (恒常的に一時エラーを返すコメントへのAPI消費を止める)。
+    /// 再試行キューへ戻せたらtrue、打ち切ったらfalseを返す
+    pub fn requeue_reply_or_give_up(
+        &self,
+        comment_id: &str,
+        max_attempts: i64,
+    ) -> AppResult<bool> {
+        let conn = self.conn()?;
+        let requeued = conn.execute(
+            "UPDATE comments SET status = ?1
+             WHERE comment_id = ?2 AND status = ?3 AND attempt_count < ?4",
+            params![
+                reply_status::QUEUED,
+                comment_id,
+                reply_status::PROCESSING,
+                max_attempts
+            ],
+        )?;
+        if requeued > 0 {
+            return Ok(true);
+        }
+        conn.execute(
+            "UPDATE comments SET status = ?1, completed_at = datetime('now')
+             WHERE comment_id = ?2 AND status = ?3",
+            params![reply_status::FAILED, comment_id, reply_status::PROCESSING],
+        )?;
+        Ok(false)
     }
 
     /// ドライランで対象と判定されたことを記録する。
@@ -367,6 +415,46 @@ mod tests {
         db.requeue_reply("c1").unwrap();
         assert!(!db.is_processed("c1").unwrap(), "queuedは再試行対象");
         assert!(db.try_begin_reply("c1", "m1", "u1", "hash").unwrap());
+    }
+
+    #[test]
+    fn is_queued_only_for_requeued_comment() {
+        let db = db();
+        assert!(!db.is_queued("c1").unwrap(), "未記録はqueuedではない");
+        db.try_begin_reply("c1", "m1", "u1", "hash").unwrap();
+        assert!(!db.is_queued("c1").unwrap(), "processingはqueuedではない");
+        db.requeue_reply("c1").unwrap();
+        assert!(db.is_queued("c1").unwrap());
+        db.try_begin_reply("c1", "m1", "u1", "hash").unwrap();
+        db.complete_reply_success("c1", "r1", 200).unwrap();
+        assert!(!db.is_queued("c1").unwrap(), "succeededはqueuedではない");
+    }
+
+    #[test]
+    fn requeue_or_give_up_requeues_under_attempt_limit() {
+        let db = db();
+        db.try_begin_reply("c1", "m1", "u1", "hash").unwrap();
+        assert!(db.requeue_reply_or_give_up("c1", 5).unwrap());
+        assert_eq!(db.status_of("c1").unwrap().as_deref(), Some("queued"));
+    }
+
+    #[test]
+    fn requeue_or_give_up_fails_permanently_at_attempt_limit() {
+        let db = db();
+        for attempt in 1..=5 {
+            assert!(db.try_begin_reply("c1", "m1", "u1", "hash").unwrap());
+            let requeued = db.requeue_reply_or_give_up("c1", 5).unwrap();
+            if attempt < 5 {
+                assert!(requeued, "{}回目はまだ再試行できる", attempt);
+            } else {
+                assert!(!requeued, "上限到達で打ち切られる");
+            }
+        }
+        assert_eq!(db.status_of("c1").unwrap().as_deref(), Some("failed"));
+        assert!(
+            !db.try_begin_reply("c1", "m1", "u1", "hash").unwrap(),
+            "打ち切り後は再確保できない"
+        );
     }
 
     #[test]

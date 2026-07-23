@@ -11,6 +11,10 @@ use crate::state::AppState;
 /// 有効期限がこの秒数を切ったらトークンをリフレッシュする (7日)
 const TOKEN_REFRESH_THRESHOLD_SECS: i64 = 7 * 24 * 60 * 60;
 
+/// 一時エラーでの再試行回数の上限。恒常的に一時エラーを返すコメントが
+/// 毎周期API消費し続けるのを防ぎ、超過したらfailedで打ち切る
+const MAX_REPLY_ATTEMPTS: i64 = 5;
+
 #[derive(Debug, Default)]
 pub struct CycleReport {
     pub fetched_comments: usize,
@@ -54,8 +58,11 @@ pub async fn run_cycle(state: &AppState, http: &reqwest::Client) -> AppResult<Cy
         if pct >= state.config.usage_pause_threshold_pct {
             // 完全にAPI呼び出しを止めると使用量の観測値が更新されず永久に停止するため、
             // 軽いプローブ (/me) だけ打って観測値を更新し、回復したら次周期から再開する
-            if let Err(e) = state.ig.get_me(&token.access_token).await {
-                log::warn!("使用量確認プローブに失敗: {}", e);
+            match state.ig.get_me(&token.access_token).await {
+                // トークン失効はNeedsReauth遷移と再連携通知が必要なため握りつぶさない
+                Err(AppError::TokenExpired) => return Err(AppError::TokenExpired),
+                Err(e) => log::warn!("使用量確認プローブに失敗: {}", e),
+                Ok(_) => {}
             }
             log::warn!(
                 "API使用量が{:.0}%に達したため、この周期の処理をスキップします (閾値{:.0}%)",
@@ -116,6 +123,33 @@ pub async fn run_cycle(state: &AppState, http: &reqwest::Client) -> AppResult<Cy
             if state.sending_paused() {
                 log::warn!("kill switchが有効になったため、この周期の残りの送信を中止します");
                 return Ok(report);
+            }
+
+            // 再試行では前回の送信 (5xx等) が実は成功していた可能性があるため、
+            // 冪等キーのないこのAPIでは送信前に自分の返信が付いていないか確認する
+            if state.db.is_queued(&comment.id)? {
+                match find_own_reply(state, &token, &comment.id).await {
+                    Ok(Some(reply_id)) => {
+                        state.db.complete_reply_success(&comment.id, &reply_id, 200)?;
+                        report.replied += 1;
+                        log::warn!(
+                            "再試行前チェックで返信済みを検出 (二重返信を回避): comment_id={} reply_id={}",
+                            comment.id,
+                            reply_id
+                        );
+                        continue;
+                    }
+                    Ok(None) => {}
+                    // 確認できないまま送信すると二重返信し得るため、この周期は見送る
+                    Err(e) => {
+                        log::warn!(
+                            "返信済みチェックに失敗 (この周期は再試行を見送り): comment_id={} error={}",
+                            comment.id,
+                            e
+                        );
+                        continue;
+                    }
+                }
             }
 
             if !state
@@ -188,25 +222,39 @@ async fn send_reply(
             );
             Ok(())
         }
-        // 送信後に結果を受け取れなかった場合は成否不明。
-        // blind retryによる二重返信を避けるため自動再送しない (手動確認: RUNBOOK参照)
-        Err(AppError::Http(e)) if e.is_timeout() => {
+        // 送信後に結果を受け取れなかった場合 (タイムアウト・レスポンス読取り中の
+        // 接続断等) は成否不明。blind retryによる二重返信を避けるため自動再送しない
+        // (手動確認: RUNBOOK参照)
+        Err(AppError::Http(e)) => {
             state.db.complete_reply_unknown(&comment.id)?;
             report.unknown += 1;
             log::error!(
-                "コメント返信の結果不明 (タイムアウト): comment_id={} 自動再送しません",
+                "コメント返信の結果不明 ({}): comment_id={} 自動再送しません",
+                e,
                 comment.id
             );
             Ok(())
         }
         Err(e) if e.is_retryable_transient() => {
-            state.db.requeue_reply(&comment.id)?;
-            report.requeued += 1;
-            log::warn!(
-                "コメント返信が一時エラー (次周期で再試行): comment_id={} error={}",
-                comment.id,
-                e
-            );
+            if state
+                .db
+                .requeue_reply_or_give_up(&comment.id, MAX_REPLY_ATTEMPTS)?
+            {
+                report.requeued += 1;
+                log::warn!(
+                    "コメント返信が一時エラー (次周期で再試行): comment_id={} error={}",
+                    comment.id,
+                    e
+                );
+            } else {
+                report.failed += 1;
+                log::error!(
+                    "コメント返信の再試行が上限{}回に到達 (打ち切り): comment_id={} error={}",
+                    MAX_REPLY_ATTEMPTS,
+                    comment.id,
+                    e
+                );
+            }
             Ok(())
         }
         // 恒久エラー (権限不足・不正ID・削除済み等): 記録して自動再試行しない
@@ -228,6 +276,26 @@ async fn send_reply(
             Ok(())
         }
     }
+}
+
+/// コメントに自分 (token.user_id) の返信が既に付いていればそのreply_idを返す
+async fn find_own_reply(
+    state: &AppState,
+    token: &TokenInfo,
+    comment_id: &str,
+) -> AppResult<Option<String>> {
+    let replies = state
+        .ig
+        .fetch_replies(&token.access_token, comment_id)
+        .await?;
+    Ok(replies
+        .into_iter()
+        .find(|r| {
+            r.from
+                .as_ref()
+                .is_some_and(|from| from.id == token.user_id)
+        })
+        .map(|r| r.id))
 }
 
 /// 設定に基づく返信対象判定 (DB照会を除く純粋関数)
