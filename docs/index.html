@@ -335,7 +335,7 @@
     <img src="assets/favicon.png" alt="">
     Instagram CRM
   </a>
-  <a class="nav-cta" href="https://github.com/kenshin-morioka/instagram-crm/releases">ダウンロード</a>
+  <a id="nav-download" class="nav-cta" href="https://github.com/kenshin-morioka/instagram-crm/releases/latest">ダウンロード</a>
 </nav>
 
 <header class="hero" id="top">
@@ -352,9 +352,10 @@
     パソコンに常駐して、条件に合うコメントだけに返信します。
   </p>
   <div class="cta-row">
-    <a class="btn btn-primary" href="https://github.com/kenshin-morioka/instagram-crm/releases">ダウンロード (macOS / Windows)</a>
+    <a id="download-btn" class="btn btn-primary" href="https://github.com/kenshin-morioka/instagram-crm/releases/latest">ダウンロード (macOS / Windows)</a>
     <a class="btn btn-secondary" href="https://github.com/kenshin-morioka/instagram-crm">GitHubで見る</a>
   </div>
+  <p class="os-note" id="alt-downloads"></p>
   <p class="os-note">無料・オープンソース（MIT License）。Linuxには対応していません。</p>
 </header>
 
@@ -399,7 +400,7 @@
   <section class="reveal">
     <h2>使い方</h2>
     <ol class="steps">
-      <li><strong>アプリをインストール</strong> — 上のダウンロードボタンからReleasesページを開き、macOSは <code>.dmg</code>、Windowsは <code>.msi</code> を取得します。</li>
+      <li><strong>アプリをインストール</strong> — 上のダウンロードボタンを押すと、お使いのOSに合ったインストーラー (macOS: <code>.dmg</code> / Windows: <code>.msi</code>) がダウンロードされます。</li>
       <li><strong>Metaのアクセストークンを発行</strong> — Instagramのプロアカウント（ビジネス/クリエイター）が必要です。手順は <a href="https://github.com/kenshin-morioka/instagram-crm/blob/main/doc/META_SETUP.md">META_SETUP.md</a> を参照してください。</li>
       <li><strong>アプリと連携</strong> — 発行したトークンをアプリに貼り付けて「連携する」を押します。</li>
       <li><strong>ドライランで動作確認</strong> — しばらく動かし、返信対象が意図どおりかログで確認します。</li>
@@ -442,6 +443,55 @@
   window.addEventListener('scroll', function () {
     nav.classList.toggle('scrolled', window.scrollY > 8);
   });
+
+  // 最新リリースの成果物URLを取得し、OSに合ったファイルの直接ダウンロードに差し替える。
+  // ファイル名にバージョンが入るため固定リンクにできず、APIから毎回解決する。
+  // 取得に失敗した場合はフォールバック (Releasesページへのリンク) のまま
+  (function () {
+    var downloadBtn = document.getElementById('download-btn');
+    var navDownload = document.getElementById('nav-download');
+    var altDownloads = document.getElementById('alt-downloads');
+
+    fetch('https://api.github.com/repos/kenshin-morioka/instagram-crm/releases/latest')
+      .then(function (res) { return res.ok ? res.json() : Promise.reject(res.status); })
+      .then(function (release) {
+        var assets = release.assets || [];
+        function assetUrl(suffix) {
+          for (var i = 0; i < assets.length; i++) {
+            if (assets[i].name.endsWith(suffix)) return assets[i].browser_download_url;
+          }
+          return null;
+        }
+        var winMsi = assetUrl('.msi');
+        var macArm = assetUrl('aarch64.dmg');
+        var macIntel = assetUrl('x64.dmg');
+        var version = release.tag_name || '';
+
+        var ua = navigator.userAgent;
+        var url = null;
+        var label = null;
+        var alt = [];
+        if (ua.indexOf('Windows') !== -1 && winMsi) {
+          url = winMsi;
+          label = 'ダウンロード (Windows) ' + version;
+        } else if (ua.indexOf('Mac') !== -1 && macArm) {
+          // ブラウザからはApple Silicon / Intelを確実に判別できないため、
+          // 主流のApple Siliconを既定にしてIntel用リンクを併記する
+          url = macArm;
+          label = 'ダウンロード (macOS) ' + version;
+          if (macIntel) alt.push('<a href="' + macIntel + '">Intel Macの方はこちら</a>');
+        }
+
+        if (url) {
+          downloadBtn.href = url;
+          downloadBtn.textContent = label;
+          navDownload.href = url;
+          alt.push('<a href="https://github.com/kenshin-morioka/instagram-crm/releases/latest">その他のダウンロード</a>');
+          altDownloads.innerHTML = alt.join(' · ');
+        }
+      })
+      .catch(function () { /* フォールバックのままにする */ });
+  })();
 
   var reveals = document.querySelectorAll('.reveal');
   if ('IntersectionObserver' in window) {
