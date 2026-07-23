@@ -1,0 +1,12 @@
+{
+  "meta_auth_mode": "instagram_login",
+  "meta_graph_api_version": "v25.0",
+  "polling_interval_secs": 30,
+  "comment_lookback_hours": 24,
+  "media_fetch_limit": 10,
+  "dry_run": true,
+  "allowed_media_ids": [],
+  "reply_keywords": [],
+  "max_comment_length": 500,
+  "usage_pause_threshold_pct": 90.0
+}

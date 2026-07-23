@@ -1,0 +1,275 @@
+use std::sync::RwLock;
+
+use crate::api::instagram::InstagramClient;
+use crate::config::AppConfig;
+use crate::db::{keys, Db};
+use crate::models::{ConnectionStatus, TokenInfo};
+
+pub const MIN_POLLING_INTERVAL_SECS: u64 = 10;
+pub const MAX_POLLING_INTERVAL_SECS: u64 = 3600;
+
+pub struct AppState {
+    pub config: AppConfig,
+    pub db: Db,
+    pub ig: InstagramClient,
+    token: RwLock<Option<TokenInfo>>,
+    status: RwLock<ConnectionStatus>,
+}
+
+impl AppState {
+    pub fn new(config: AppConfig, db: Db, token: Option<TokenInfo>) -> Self {
+        let status = match &token {
+            Some(t) if t.is_expired() => ConnectionStatus::NeedsReauth,
+            Some(_) => ConnectionStatus::Connected,
+            None => ConnectionStatus::NotConnected,
+        };
+        let ig = InstagramClient::new(&config.meta_graph_api_version);
+        Self {
+            config,
+            db,
+            ig,
+            token: RwLock::new(token),
+            status: RwLock::new(status),
+        }
+    }
+
+    pub fn token(&self) -> Option<TokenInfo> {
+        // RwLockのpoisoningは書き込み中のpanicでしか起きないため、
+        // 発生時はトークンなし扱いにして再ログインを促す
+        self.token.read().ok().and_then(|t| t.clone())
+    }
+
+    pub fn set_token(&self, token: Option<TokenInfo>) {
+        if let Ok(mut guard) = self.token.write() {
+            *guard = token;
+        }
+    }
+
+    pub fn status(&self) -> ConnectionStatus {
+        self.status
+            .read()
+            .map(|s| *s)
+            .unwrap_or(ConnectionStatus::NotConnected)
+    }
+
+    pub fn set_status(&self, status: ConnectionStatus) {
+        if let Ok(mut guard) = self.status.write() {
+            *guard = status;
+        }
+    }
+
+    /// UIで保存された値 (SQLite) を優先し、なければ設定ファイルの初期値を使う
+    pub fn polling_interval_secs(&self) -> u64 {
+        let saved = self
+            .db
+            .get_setting(keys::POLLING_INTERVAL_SECS)
+            .ok()
+            .flatten()
+            .and_then(|v| v.parse::<u64>().ok());
+        saved
+            .unwrap_or(self.config.polling_interval_secs)
+            .clamp(MIN_POLLING_INTERVAL_SECS, MAX_POLLING_INTERVAL_SECS)
+    }
+
+    /// 返信文。未設定なら空文字を返す (デフォルト文は持たず、未設定時は送信しない)
+    pub fn reply_text(&self) -> String {
+        self.db
+            .get_setting(keys::REPLY_TEXT)
+            .ok()
+            .flatten()
+            .filter(|v| !v.trim().is_empty())
+            .unwrap_or_default()
+    }
+
+    pub fn last_run_at(&self) -> Option<String> {
+        self.db.get_setting(keys::LAST_RUN_AT).ok().flatten()
+    }
+
+    /// kill switch: trueの間は新規送信を行わない
+    pub fn sending_paused(&self) -> bool {
+        self.db
+            .get_setting(keys::SENDING_PAUSED)
+            .ok()
+            .flatten()
+            .as_deref()
+            == Some("true")
+    }
+
+    pub fn set_sending_paused(&self, paused: bool) -> crate::error::AppResult<()> {
+        self.db
+            .set_setting(keys::SENDING_PAUSED, if paused { "true" } else { "false" })
+    }
+
+    /// UIで切り替えた値 (SQLite) を優先し、なければ設定ファイルの初期値を使う
+    pub fn dry_run(&self) -> bool {
+        self.db
+            .get_setting(keys::DRY_RUN)
+            .ok()
+            .flatten()
+            .and_then(|v| v.parse::<bool>().ok())
+            .unwrap_or(self.config.dry_run)
+    }
+
+    pub fn set_dry_run(&self, enabled: bool) -> crate::error::AppResult<()> {
+        self.db
+            .set_setting(keys::DRY_RUN, if enabled { "true" } else { "false" })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
+
+    fn state_with(token: Option<TokenInfo>) -> AppState {
+        AppState::new(
+            AppConfig::default(),
+            Db::open_in_memory().expect("in-memory db"),
+            token,
+        )
+    }
+
+    fn token_expiring_in(secs: i64) -> TokenInfo {
+        TokenInfo {
+            access_token: "t".into(),
+            user_id: "u".into(),
+            expires_at: Utc::now().timestamp() + secs,
+        }
+    }
+
+    #[test]
+    fn status_is_not_connected_without_token() {
+        assert_eq!(state_with(None).status(), ConnectionStatus::NotConnected);
+    }
+
+    #[test]
+    fn status_is_connected_with_valid_token() {
+        assert_eq!(
+            state_with(Some(token_expiring_in(3600))).status(),
+            ConnectionStatus::Connected
+        );
+    }
+
+    #[test]
+    fn status_is_needs_reauth_with_expired_token() {
+        assert_eq!(
+            state_with(Some(token_expiring_in(-1))).status(),
+            ConnectionStatus::NeedsReauth
+        );
+    }
+
+    #[test]
+    fn set_token_and_set_status_update_state() {
+        let state = state_with(None);
+        state.set_token(Some(token_expiring_in(3600)));
+        state.set_status(ConnectionStatus::Connected);
+        assert!(state.token().is_some());
+        assert_eq!(state.status(), ConnectionStatus::Connected);
+    }
+
+    #[test]
+    fn polling_interval_falls_back_to_config_without_db_value() {
+        let state = state_with(None);
+        assert_eq!(state.polling_interval_secs(), 30);
+    }
+
+    #[test]
+    fn polling_interval_prefers_db_value() {
+        let state = state_with(None);
+        state
+            .db
+            .set_setting(keys::POLLING_INTERVAL_SECS, "60")
+            .unwrap();
+        assert_eq!(state.polling_interval_secs(), 60);
+    }
+
+    #[test]
+    fn polling_interval_falls_back_when_db_value_is_not_numeric() {
+        let state = state_with(None);
+        state
+            .db
+            .set_setting(keys::POLLING_INTERVAL_SECS, "abc")
+            .unwrap();
+        assert_eq!(state.polling_interval_secs(), 30);
+    }
+
+    #[test]
+    fn polling_interval_is_clamped_to_bounds() {
+        let state = state_with(None);
+        state.db.set_setting(keys::POLLING_INTERVAL_SECS, "1").unwrap();
+        assert_eq!(state.polling_interval_secs(), MIN_POLLING_INTERVAL_SECS);
+        state
+            .db
+            .set_setting(keys::POLLING_INTERVAL_SECS, "99999")
+            .unwrap();
+        assert_eq!(state.polling_interval_secs(), MAX_POLLING_INTERVAL_SECS);
+    }
+
+    #[test]
+    fn polling_interval_accepts_boundary_values() {
+        let state = state_with(None);
+        state
+            .db
+            .set_setting(keys::POLLING_INTERVAL_SECS, &MIN_POLLING_INTERVAL_SECS.to_string())
+            .unwrap();
+        assert_eq!(state.polling_interval_secs(), MIN_POLLING_INTERVAL_SECS);
+        state
+            .db
+            .set_setting(keys::POLLING_INTERVAL_SECS, &MAX_POLLING_INTERVAL_SECS.to_string())
+            .unwrap();
+        assert_eq!(state.polling_interval_secs(), MAX_POLLING_INTERVAL_SECS);
+    }
+
+    #[test]
+    fn reply_text_is_empty_when_missing_or_blank() {
+        let state = state_with(None);
+        assert_eq!(state.reply_text(), "");
+        state.db.set_setting(keys::REPLY_TEXT, "   ").unwrap();
+        assert_eq!(state.reply_text(), "");
+    }
+
+    #[test]
+    fn reply_text_returns_saved_value() {
+        let state = state_with(None);
+        state.db.set_setting(keys::REPLY_TEXT, "こんにちは！").unwrap();
+        assert_eq!(state.reply_text(), "こんにちは！");
+    }
+
+    #[test]
+    fn sending_paused_defaults_to_false_and_toggles() {
+        let state = state_with(None);
+        assert!(!state.sending_paused());
+        state.set_sending_paused(true).unwrap();
+        assert!(state.sending_paused());
+        state.set_sending_paused(false).unwrap();
+        assert!(!state.sending_paused());
+    }
+
+    #[test]
+    fn dry_run_defaults_to_config_value_and_ui_override_wins() {
+        let state = state_with(None);
+        assert!(state.dry_run(), "設定ファイル初期値 (true) が使われる");
+        state.set_dry_run(false).unwrap();
+        assert!(!state.dry_run(), "UIでの切り替えが優先される");
+        state.set_dry_run(true).unwrap();
+        assert!(state.dry_run());
+    }
+
+    #[test]
+    fn dry_run_falls_back_to_config_when_db_value_is_invalid() {
+        let state = state_with(None);
+        state.db.set_setting(keys::DRY_RUN, "yes").unwrap();
+        assert!(state.dry_run());
+    }
+
+    #[test]
+    fn last_run_at_reflects_db_value() {
+        let state = state_with(None);
+        assert_eq!(state.last_run_at(), None);
+        state
+            .db
+            .set_setting(keys::LAST_RUN_AT, "2026-07-23 12:34:56")
+            .unwrap();
+        assert_eq!(state.last_run_at(), Some("2026-07-23 12:34:56".into()));
+    }
+}

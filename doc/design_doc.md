@@ -1,4 +1,4 @@
-# Instagram Auto Reply (MVP) 仕様書
+# Instagram CRM (MVP) 仕様書
 
 ## 概要
 
@@ -158,7 +158,7 @@ SQLiteへ返信済みコメントを保存する。
 ## メイン画面
 
 ```
-Instagram Auto Reply
+Instagram CRM
 
 接続状態
 
