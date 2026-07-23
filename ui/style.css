@@ -99,6 +99,26 @@ main {
   color: var(--text-sub);
 }
 
+/* ---------- update banner ---------- */
+
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(238, 42, 123, 0.25);
+  border-radius: 12px;
+  background: rgba(238, 42, 123, 0.08);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.update-banner .btn {
+  flex: none;
+}
+
 /* ---------- cards ---------- */
 
 .card {
@@ -392,6 +412,15 @@ input[type="number"]:focus {
   margin: 0;
   font-size: 14px;
   font-variant-numeric: tabular-nums;
+  color: var(--text-sub);
+}
+
+/* ---------- footer ---------- */
+
+.app-footer {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 11px;
   color: var(--text-sub);
 }
 
