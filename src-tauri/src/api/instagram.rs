@@ -73,7 +73,9 @@ impl MeResponse {
     }
 }
 
-/// x-app-usage ヘッダーの中身 (使用率%)
+/// 使用量ヘッダーの1エントリ (使用率%)。
+/// x-app-usage はこの形そのもの、x-business-use-case-usage は
+/// {"<business-id>": [この形, ...]} で返る (未知のフィールドは無視)
 #[derive(Debug, Deserialize)]
 struct AppUsage {
     call_count: Option<f64>,
@@ -209,18 +211,41 @@ impl InstagramClient {
     }
 
     fn record_usage(&self, response: &Response) {
-        let Some(pct) = response
-            .headers()
-            .get("x-app-usage")
-            .and_then(|v| v.to_str().ok())
-            .and_then(|v| serde_json::from_str::<AppUsage>(v).ok())
-            .map(|u| u.max_pct())
+        let header = |name: &str| {
+            response
+                .headers()
+                .get(name)
+                .and_then(|v| v.to_str().ok())
+        };
+        let Some(pct) = max_usage_pct(header("x-app-usage"), header("x-business-use-case-usage"))
         else {
             return;
         };
         if let Ok(mut guard) = self.last_usage_pct.write() {
             *guard = Some(pct);
         }
+    }
+}
+
+/// アプリ単位 (x-app-usage) とアカウント単位 (x-business-use-case-usage) の
+/// 両ヘッダーから使用率の最大値を求める。アカウント別レート上限は
+/// business use case側でしか報告されないため、片方だけでは取りこぼす
+fn max_usage_pct(app_header: Option<&str>, business_header: Option<&str>) -> Option<f64> {
+    let app_pct = app_header
+        .and_then(|v| serde_json::from_str::<AppUsage>(v).ok())
+        .map(|u| u.max_pct());
+    let business_pct = business_header
+        .and_then(|v| {
+            serde_json::from_str::<std::collections::HashMap<String, Vec<AppUsage>>>(v).ok()
+        })
+        .map(|m| {
+            m.values()
+                .flatten()
+                .fold(0.0, |acc, u| f64::max(acc, u.max_pct()))
+        });
+    match (app_pct, business_pct) {
+        (Some(a), Some(b)) => Some(a.max(b)),
+        (a, b) => a.or(b),
     }
 }
 
@@ -369,6 +394,26 @@ mod tests {
     fn app_usage_defaults_to_zero_when_empty() {
         let usage: AppUsage = serde_json::from_str(r#"{}"#).unwrap();
         assert_eq!(usage.max_pct(), 0.0);
+    }
+
+    #[test]
+    fn max_usage_pct_takes_max_across_both_headers() {
+        let app = r#"{"call_count":10,"total_time":20,"total_cputime":5}"#;
+        // 未知フィールド (type, estimated_time_to_regain_access) は無視される
+        let buc = r#"{"17841400000000000":[{"type":"instagram","call_count":95,"total_cputime":3,"total_time":8,"estimated_time_to_regain_access":0}]}"#;
+        assert_eq!(max_usage_pct(Some(app), Some(buc)), Some(95.0));
+        assert_eq!(max_usage_pct(Some(app), None), Some(20.0));
+        assert_eq!(max_usage_pct(None, Some(buc)), Some(95.0));
+        assert_eq!(max_usage_pct(None, None), None);
+    }
+
+    #[test]
+    fn max_usage_pct_ignores_unparsable_headers() {
+        assert_eq!(max_usage_pct(Some("<html>"), None), None);
+        assert_eq!(
+            max_usage_pct(Some(r#"{"call_count":50}"#), Some("broken")),
+            Some(50.0)
+        );
     }
 
     #[test]

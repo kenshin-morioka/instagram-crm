@@ -94,18 +94,28 @@ dryRunButton.addEventListener("click", async () => {
   ) {
     return;
   }
+  // renderStatusがdryRun/sendingPausedを切替後の値で上書きするため、
+  // トースト文言の判定には切替前の値を使う
+  const wasDryRun = dryRun;
   try {
     renderStatus(await invoke("set_dry_run", { enabled: !dryRun }));
-    showMessage(dryRun ? "ドライランを解除しました (実送信が始まります)" : "ドライランに戻しました");
+    showMessage(wasDryRun ? "ドライランを解除しました (実送信が始まります)" : "ドライランに戻しました");
   } catch (e) {
     showMessage(String(e));
   }
 });
 
 pauseButton.addEventListener("click", async () => {
+  if (
+    sendingPaused &&
+    !confirm("送信を再開すると、対象コメントへの自動返信が再び始まります。よろしいですか？")
+  ) {
+    return;
+  }
+  const wasPaused = sendingPaused;
   try {
     renderStatus(await invoke("set_sending_paused", { paused: !sendingPaused }));
-    showMessage(sendingPaused ? "送信を再開しました" : "送信を一時停止しました");
+    showMessage(wasPaused ? "送信を再開しました" : "送信を一時停止しました");
   } catch (e) {
     showMessage(String(e));
   }

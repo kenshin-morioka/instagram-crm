@@ -111,13 +111,32 @@ pub async fn run_cycle(state: &AppState, http: &reqwest::Client) -> AppResult<Cy
                 continue;
             }
 
+            // kill switchを周期の途中でも次の送信前に反映する (周期開始時のみの
+            // チェックだと、実行中の周期の残りコメントへ送信し続けてしまう)
+            if state.sending_paused() {
+                log::warn!("kill switchが有効になったため、この周期の残りの送信を中止します");
+                return Ok(report);
+            }
+
             if !state
                 .db
                 .try_begin_reply(&comment.id, &media.id, &token.user_id, &reply_text_hash)?
             {
                 continue;
             }
-            send_reply(state, &token, comment, &reply_text, &mut report).await?;
+            if let Err(e) = send_reply(state, &token, comment, &reply_text, &mut report).await {
+                // 中断までの部分集計を可視化してから伝播する (返信結果自体はDBに記録済み)
+                log::warn!(
+                    "周期を中断します (取得={} 返信={} 失敗={} 不明={} 再試行待ち={}): {}",
+                    report.fetched_comments,
+                    report.replied,
+                    report.failed,
+                    report.unknown,
+                    report.requeued,
+                    e
+                );
+                return Err(e);
+            }
         }
     }
 
