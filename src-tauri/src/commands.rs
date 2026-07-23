@@ -2,15 +2,19 @@ use chrono::Utc;
 use serde::Serialize;
 use tauri::State;
 
-use crate::auth::token_store;
+use crate::auth::{oauth, token_store};
 use crate::db::keys;
 use crate::error::{AppError, AppResult};
 use crate::models::{ConnectionStatus, TokenInfo};
 use crate::state::{AppState, MAX_POLLING_INTERVAL_SECS, MIN_POLLING_INTERVAL_SECS};
 
 /// App Dashboardで発行される長期トークンの有効期間 (60日)。
-/// 発行日時はAPIから取得できないため、貼り付け時点から60日とみなす
+/// リフレッシュで実期限に同期できなかった場合のフォールバックとして使う
 const LONG_LIVED_TOKEN_TTL_SECS: i64 = 60 * 24 * 60 * 60;
+
+/// Instagramコメントの文字数上限。超える返信文は全コメントが恒久failedに
+/// なり続けるため、保存時に弾く
+const REPLY_TEXT_MAX_CHARS: usize = 2200;
 
 #[derive(Debug, Serialize)]
 pub struct StatusPayload {
@@ -75,6 +79,12 @@ pub fn save_reply_text(state: State<'_, AppState>, text: String) -> AppResult<()
     if text.trim().is_empty() {
         return Err(AppError::Config("返信文を入力してください".into()));
     }
+    if text.chars().count() > REPLY_TEXT_MAX_CHARS {
+        return Err(AppError::Config(format!(
+            "返信文は{}文字以内で入力してください",
+            REPLY_TEXT_MAX_CHARS
+        )));
+    }
     state.db.set_setting(keys::REPLY_TEXT, &text)
 }
 
@@ -110,16 +120,32 @@ pub async fn connect_with_token(
         other => other,
     })?;
 
-    let token_info = TokenInfo {
+    let provisional = TokenInfo {
         access_token: token,
         user_id,
         expires_at: Utc::now().timestamp() + LONG_LIVED_TOKEN_TTL_SECS,
     };
 
+    // 貼り付けトークンの実期限はAPIから取得できないため、リフレッシュを一度試みて
+    // 実期限に同期する (残り期間の短いトークンを60日有効と誤認すると
+    // 期限7日前の自動リフレッシュが機能しない)。
+    // 発行24時間未満のトークンはリフレッシュできないため、失敗時は60日仮定で続行する
+    let http = crate::api::instagram::http_client();
+    let token_info = match oauth::refresh_token(&http, &provisional).await {
+        Ok(refreshed) => refreshed,
+        Err(e) => {
+            log::info!(
+                "トークン期限の同期に失敗 (貼り付け時点から60日として扱う): {}",
+                e
+            );
+            provisional
+        }
+    };
+
     token_store::save(&token_info)?;
     state.set_token(Some(token_info));
     state.set_status(ConnectionStatus::Connected);
-    log::info!("OAuth成功: アクセストークンを検証してInstagramアカウントを連携しました");
+    log::info!("アクセストークンを検証してInstagramアカウントを連携しました");
 
     Ok(status_payload(&state))
 }

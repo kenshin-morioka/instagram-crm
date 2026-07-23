@@ -2,12 +2,23 @@ use chrono::{DateTime, FixedOffset, Utc};
 use serde::{Deserialize, Serialize};
 
 /// Keychain / Credential Manager に保存するアクセストークン情報
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct TokenInfo {
     pub access_token: String,
     pub user_id: String,
     /// 有効期限 (Unixタイムスタンプ秒)
     pub expires_at: i64,
+}
+
+/// {:?} ログ経由でトークン実値が平文出力されないよう、deriveせず手動でマスクする
+impl std::fmt::Debug for TokenInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TokenInfo")
+            .field("access_token", &"***")
+            .field("user_id", &self.user_id)
+            .field("expires_at", &self.expires_at)
+            .finish()
+    }
 }
 
 impl TokenInfo {
@@ -90,6 +101,19 @@ mod tests {
         // 境界ちょうどはtrue、境界+余裕はfalse
         assert!(token_expiring_in(100).expires_within_secs(100));
         assert!(!token_expiring_in(200).expires_within_secs(100));
+    }
+
+    #[test]
+    fn token_info_debug_masks_access_token() {
+        let token = TokenInfo {
+            access_token: "secret-token-value".into(),
+            user_id: "u1".into(),
+            expires_at: 0,
+        };
+        let debug = format!("{:?}", token);
+        assert!(!debug.contains("secret-token-value"));
+        assert!(debug.contains("***"));
+        assert!(debug.contains("u1"));
     }
 
     #[test]

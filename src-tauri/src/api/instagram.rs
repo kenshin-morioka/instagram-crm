@@ -172,6 +172,23 @@ impl InstagramClient {
         Ok(envelope.data)
     }
 
+    /// コメントに付いた返信一覧を取得する (再送前の二重返信チェック用)
+    pub async fn fetch_replies(
+        &self,
+        access_token: &str,
+        comment_id: &str,
+    ) -> AppResult<Vec<Comment>> {
+        let response = self
+            .http
+            .get(format!("{}/{}/replies", self.base, comment_id))
+            .query(&[("fields", "id,from"), ("limit", "50")])
+            .bearer_auth(access_token)
+            .send()
+            .await?;
+        let envelope: Envelope<Comment> = self.parse_response(response).await?;
+        Ok(envelope.data)
+    }
+
     /// コメントへ返信し、作成された返信コメントのIDを返す
     pub async fn reply_to_comment(
         &self,
