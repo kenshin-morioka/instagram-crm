@@ -1,18 +1,29 @@
 # Meta App Dashboard セットアップ手順 (META_SETUP)
 
-このアプリは「Instagram API with Instagram Login」を使用する。Facebookページは不要。
+このアプリは「Instagram API with Instagram Login」を使用する。**Facebookページは不要**だが、開発者登録のために **Facebookアカウント (個人) は必要**。
 
-## 1. 前提: Instagramプロアカウント
+## 1. 前提: 必要なアカウント
 
-- 対象アカウントを**プロアカウント (ビジネス or クリエイター)** に切り替える
-- Instagramアプリ: 設定 → アカウントの種類とツール → プロアカウントに切り替える
-- 個人アカウントのままではAPIを使用できない
+| アカウント | 用途 | 備考 |
+|---|---|---|
+| Instagramプロアカウント | APIの操作対象。トークン発行時にログインする | ビジネス or クリエイター。個人アカウントのままではAPI不可 |
+| Facebookアカウント | Meta開発者ダッシュボードへのログイン | Facebook**ページ**は不要 |
+| Meta for Developers登録 | 上記Facebookアカウントへの開発者権限付与 (一度きり) | 電話番号 or メールの確認あり |
+
+- プロアカウントへの切り替え: Instagramアプリ → 設定 → アカウントの種類とツール → プロアカウントに切り替える
+
+### 開発者登録のSMS認証が届かないとき
+
+- 短時間に再送を繰り返すとレート制限がかかり、エラー表示なしにSMSが送られなくなる。**数時間〜24時間空けて再試行**する
+- 先に facebook.com の 設定 → アカウントセンター → 個人の情報 → 連絡先情報 で電話番号を認証しておくと通りやすい
+- 再試行時はシークレットウィンドウで最初からやり直す。電話番号は国コード +81 選択時、先頭の 0 を抜く
 
 ## 2. Metaアプリの作成
 
-1. https://developers.facebook.com/ → My Apps → Create App
-2. ユースケースで **Instagram** を選択 (Instagram API with Instagram Login)
-3. 作成後、左メニュー「Instagram > API setup with Instagram login」を開く
+1. https://developers.facebook.com/apps/creation/ を開く (My Apps → Create App でも可)
+2. ユースケースで **Instagram** 系 (「Instagramでビジネスを管理」等) を選択。ユースケースにInstagramが出ない場合はアプリタイプ **Business** を選択
+3. ビジネスポートフォリオは「後で接続」でよい
+4. 作成後、左メニュー「Instagram > API setup with Instagram business login」を開く
 
 ## 3. 認証方式
 
@@ -28,11 +39,14 @@
 
 ## 5. アクセストークンの発行
 
-1. 「API setup with Instagram login」内の **Token Generator** を開く
-2. 対象のプロアカウントを追加 (App Roles → Instagram Testers に追加し、
-   Instagram側の 設定 → アプリとウェブサイト → テスター招待 で承認)
-3. 上記2スコープを選択して Generate Token
-4. 表示された**長期トークン (60日有効)** をアプリの「接続状態」欄へ貼り付け
+1. 「API setup with Instagram business login」の「1. Generate access tokens」で
+   **Add account** から対象のプロアカウントを追加 (Instagramへのログインを求められる)
+2. 追加したアカウント横の **Generate token** をクリックし、上記2スコープで発行
+3. 表示された**長期トークン (60日有効)** をアプリの「接続状態」欄へ貼り付け
+
+※ 旧UIでは「Token Generator」という名称で、App Roles → Instagram Testers への追加と
+Instagram側 (設定 → アプリとウェブサイト → テスター招待) での承認が必要だった。
+現UIで承認を求められた場合も同じ場所で承認する。
 
 ## 6. トークンの更新・失効
 
