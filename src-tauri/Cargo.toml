@@ -1,6 +1,6 @@
 [package]
 name = "instagram-crm"
-version = "1.1.0"
+version = "1.1.1"
 description = "Instagramリールのコメントへ自動で定型文を返信する常駐アプリ"
 edition = "2021"
 license = "MIT"
