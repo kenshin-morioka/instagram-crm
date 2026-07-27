@@ -32,8 +32,9 @@
 
 ## 4. 必要な権限 (スコープ)
 
-トークン発行時に以下のみ付与する。それ以外 (公開投稿・メッセージ権限等) は要求しない。
+トークン発行時に以下を付与する。それ以外 (公開投稿・メッセージ権限等) は要求しない。
 
+- `public_profile` (ダッシュボード上で必須として要求される)
 - `instagram_business_basic` (必須。トークンリフレッシュにも必要)
 - `instagram_business_manage_comments` (コメント取得・返信)
 
@@ -41,7 +42,7 @@
 
 1. 「API setup with Instagram business login」の「1. Generate access tokens」で
    **Add account** から対象のプロアカウントを追加 (Instagramへのログインを求められる)
-2. 追加したアカウント横の **Generate token** をクリックし、上記2スコープで発行
+2. 追加したアカウント横の **Generate token** をクリックし、§4 の3スコープで発行
 3. 表示された**長期トークン (60日有効)** をアプリの「接続状態」欄へ貼り付け
 
 ※ 旧UIでは「Token Generator」という名称で、App Roles → Instagram Testers への追加と
@@ -55,9 +56,30 @@ Instagram側 (設定 → アプリとウェブサイト → テスター招待) 
 - 失効させたい場合: Instagramアプリの 設定 → アプリとウェブサイト から連携を解除するか、
   Meta App Dashboard でアプリを無効化する (OPERATIONS_RUNBOOK.md 参照)
 
-## 7. Standard / Advanced Access と App Review
+## 7. アプリの「公開」への切り替え (自分用でも必須)
 
-- **開発モード + Standard Access** のままで、Instagram Testers に登録した自分のアカウントに対して全機能が動作する (自分用途はここまでで完結)
+**開発モードのままではコメントの読み取り (`GET /{media-id}/comments`) が空 (`data: []`) で返る**
+(2026-07-27 実機確認。テスター登録・承認済みの自分のアカウントのコメントでも同様だった)。
+コメント投稿・削除 (POST/DELETE) や `comments_count` は開発モードでも成功するため
+権限不足と誤認しやすいが、この読み取りだけはアプリを「公開」に切り替えるまで解消しない。
+※ トークン発行やその他のAPIにはテスター登録が引き続き必要 (§5)。この節は
+「読み取りが空になる原因はトークン・スコープ・テスター登録の不備ではない」という意味である。
+
+公開に必要な設定:
+
+1. **設定 → ベーシック** で以下を入力 (未入力だと「Currently ineligible for submission」と表示される)
+   - プライバシーポリシーのURL: https://kenshin-morioka.github.io/instagram-crm/privacy.html
+   - 利用規約のURL: https://kenshin-morioka.github.io/instagram-crm/terms.html
+   - カテゴリ: 近いものを選択 (「ビジネスと管理ページ」等)
+2. **ユースケースのテスト**: 対象アプリのトークンで各権限のAPIを実際に呼び出すと実績が記録される
+   (`GET /me`、`GET /me/media`、`GET·POST /{media}/comments`、`POST /{comment}/replies` 等)。
+   ダッシュボードへの反映は**最大24時間**かかる。反映まで「テスト開始待ち」と表示される
+3. 上記が揃うと「公開」へ切り替えられる
+
+### App Review (アドバンスアクセス) について
+
+- **自分のアカウントのみで使う場合、App Review (Metaの人力審査) は不要**。
+  ダッシュボードにも「自分のInstagramビジネスのためにのみ構築する場合はスキップ可」と明記されている
 - 不特定の第三者のアカウントで使わせる場合のみ、App Review で
   `instagram_business_manage_comments` の **Advanced Access** を申請する
 - 確認箇所: App Dashboard → App Review → Permissions and Features
@@ -70,7 +92,8 @@ Webhook callback URL・verify token・commentsフィールド購読の設定は�
 ## 9. 本番運用前チェックリスト
 
 - [ ] 対象アカウントがプロアカウントである
-- [ ] トークンのスコープが上記2つのみである
+- [ ] トークンのスコープが §4 の3つのみである
+- [ ] アプリを「公開」に切り替えた (開発モードのままだとコメントが取得できない)
 - [ ] ドライラン (既定ON) のまま数周期動かし、`[DRY RUN]` ログで対象判定が意図どおりか確認した
 - [ ] `allowed_media_ids` / `reply_keywords` を必要に応じて設定した
 - [ ] 返信文が固定テンプレートとして適切 (スパム的でない) ことを確認した
