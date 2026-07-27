@@ -10,10 +10,19 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     var buttons = document.querySelectorAll('.theme-toggle');
+    // スクリーンリーダー向けに現在のオン/オフ状態を公開する
+    function syncButtons(current) {
+      buttons.forEach(function (btn) {
+        btn.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      });
+    }
+    syncButtons(document.documentElement.getAttribute('data-theme'));
+
     buttons.forEach(function (btn) {
       btn.addEventListener('click', function () {
         var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', next);
+        syncButtons(next);
         try { localStorage.setItem('theme', next); } catch (e) { /* 保存できなくても切り替えは有効 */ }
       });
     });
