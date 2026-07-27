@@ -10,7 +10,10 @@
     "dialog:allow-confirm",
     {
       "identifier": "opener:allow-open-url",
-      "allow": [{ "url": "https://github.com/kenshin-morioka/instagram-crm/*" }]
+      "allow": [
+        { "url": "https://github.com/kenshin-morioka/instagram-crm/*" },
+        { "url": "https://kenshin-morioka.github.io/instagram-crm/*" }
+      ]
     }
   ]
 }

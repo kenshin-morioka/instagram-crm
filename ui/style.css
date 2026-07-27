@@ -512,6 +512,10 @@ input[type="number"]:focus {
   font-size: 13px;
 }
 
+.terms-doc-link {
+  color: var(--accent);
+}
+
 .terms-list {
   margin: 0 0 14px;
   padding-left: 18px;
