@@ -399,9 +399,8 @@
   </p>
   <div class="cta-row">
     <a id="download-btn" class="btn btn-primary" href="https://github.com/kenshin-morioka/instagram-crm/releases/latest">ダウンロード (macOS / Windows)</a>
-    <a class="btn btn-secondary" href="https://github.com/kenshin-morioka/instagram-crm">GitHubで見る</a>
+    <a class="btn btn-secondary" href="https://github.com/kenshin-morioka/instagram-crm/releases/latest">他のダウンロードオプション</a>
   </div>
-  <p class="os-note" id="alt-downloads"></p>
   <p class="os-note">無料・オープンソース（MIT License）。Linuxには対応していません。</p>
 </header>
 
@@ -499,7 +498,6 @@
   // 取得に失敗した場合はフォールバック (Releasesページへのリンク) のまま
   (function () {
     var downloadBtn = document.getElementById('download-btn');
-    var altDownloads = document.getElementById('alt-downloads');
 
     fetch('https://api.github.com/repos/kenshin-morioka/instagram-crm/releases/latest')
       .then(function (res) { return res.ok ? res.json() : Promise.reject(res.status); })
@@ -513,29 +511,24 @@
         }
         var winMsi = assetUrl('.msi');
         var macArm = assetUrl('aarch64.dmg');
-        var macIntel = assetUrl('x64.dmg');
         var version = release.tag_name || '';
 
         var ua = navigator.userAgent;
         var url = null;
         var label = null;
-        var alt = [];
         if (ua.indexOf('Windows') !== -1 && winMsi) {
           url = winMsi;
           label = 'ダウンロード (Windows) ' + version;
         } else if (ua.indexOf('Mac') !== -1 && macArm) {
           // ブラウザからはApple Silicon / Intelを確実に判別できないため、
-          // 主流のApple Siliconを既定にしてIntel用リンクを併記する
+          // 主流のApple Siliconを既定にする (Intel等は「他のダウンロードオプション」から)
           url = macArm;
           label = 'ダウンロード (macOS) ' + version;
-          if (macIntel) alt.push('<a href="' + macIntel + '">Intel Macの方はこちら</a>');
         }
 
         if (url) {
           downloadBtn.href = url;
           downloadBtn.textContent = label;
-          alt.push('<a href="https://github.com/kenshin-morioka/instagram-crm/releases/latest">その他のダウンロード</a>');
-          altDownloads.innerHTML = alt.join(' · ');
         }
       })
       .catch(function () { /* フォールバックのままにする */ });
