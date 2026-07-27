@@ -26,7 +26,7 @@ cargo test
 
 ## 設計方針
 
-設計方針は [doc/design_doc.md](doc/design_doc.md) を参照してください。
+設計方針は [docs/design_doc.md](docs/design_doc.md) を参照してください。
 
 ## Issue・プルリクエスト
 

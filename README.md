@@ -16,7 +16,7 @@
 ### 事前に必要なもの
 
 - **Instagram のプロアカウント** (ビジネス または クリエイター)。個人アカウントのままでは API を利用できません
-- **Meta 側の準備**（アプリ登録・アクセストークンの発行）。手順は [doc/META_SETUP.md](doc/META_SETUP.md) にまとめています。少し手間ですが、一度だけ行えば大丈夫です
+- **Meta 側の準備**（アプリ登録・アクセストークンの発行）。手順は [docs/META_SETUP.md](docs/META_SETUP.md) にまとめています。少し手間ですが、一度だけ行えば大丈夫です
 
 ### macOS
 
@@ -38,7 +38,7 @@
 
 ### ① Meta のアクセストークンを用意する
 
-[doc/META_SETUP.md](doc/META_SETUP.md) の手順に沿って、**長期アクセストークン（60日有効）** を発行します。付与する権限は次の 2 つだけです。
+[docs/META_SETUP.md](docs/META_SETUP.md) の手順に沿って、**長期アクセストークン（60日有効）** を発行します。付与する権限は次の 2 つだけです。
 
 - `instagram_business_basic`
 - `instagram_business_manage_comments`
@@ -80,7 +80,7 @@
 
 ### 困ったとき
 
-トークンが切れた・返信を止めたい（kill switch）などの対処は [doc/OPERATIONS_RUNBOOK.md](doc/OPERATIONS_RUNBOOK.md) を参照してください。
+トークンが切れた・返信を止めたい（kill switch）などの対処は [docs/OPERATIONS_RUNBOOK.md](docs/OPERATIONS_RUNBOOK.md) を参照してください。
 
 ---
 
@@ -136,7 +136,7 @@
 - **プライバシーに配慮したログ** — トークンの実値・コメント本文・ユーザー名はログに出力しません
 - **API 制限への配慮** — レート制限（HTTP 429）に対して自動でバックオフし、使用量がしきい値を超えると自動で一時停止します
 
-第三者が参照できる静的レビュー（規約準拠の観点）の結果は [doc/COMPLIANCE_AUDIT.md](doc/COMPLIANCE_AUDIT.md) にまとめています。
+第三者が参照できる静的レビュー（規約準拠の観点）の結果は [docs/COMPLIANCE_AUDIT.md](docs/COMPLIANCE_AUDIT.md) にまとめています。
 
 ---
 
