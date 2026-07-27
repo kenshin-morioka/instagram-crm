@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="assets/theme.js"></script>
 <style>
   :root {
     --bg: #fafafa;
@@ -19,8 +20,26 @@
     --accent3: #fd9a3c;
     --card-bg: #ffffff;
     --border: #ececef;
+    --nav-bg: rgba(250, 250, 250, 0.72);
+    --check-bg: #eafaf0;
+    --check-fg: #1f9d55;
+    --blob-opacity: 0.55;
     --shadow: 0 10px 30px -12px rgba(129, 52, 175, 0.18);
   }
+  :root[data-theme="dark"] {
+    --bg: #141118;
+    --fg: #f1eef5;
+    --muted: #a39daf;
+    --card-bg: #1d1924;
+    --border: #2c2735;
+    --nav-bg: rgba(20, 17, 24, 0.72);
+    --check-bg: #163524;
+    --check-fg: #4cc47f;
+    --blob-opacity: 0.28;
+    --shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.55);
+  }
+  html { color-scheme: light; }
+  :root[data-theme="dark"] { color-scheme: dark; }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
@@ -44,7 +63,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 14px 24px;
-    background: rgba(250, 250, 250, 0.72);
+    background: var(--nav-bg);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid transparent;
@@ -62,20 +81,35 @@
     color: var(--fg);
   }
   nav .brand img { width: 26px; height: 26px; border-radius: 7px; }
-  nav .nav-cta {
-    padding: 8px 18px;
-    border-radius: 999px;
-    background: var(--fg);
-    color: #fff;
-    font-size: 0.85rem;
-    font-weight: 600;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  nav .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  nav .nav-cta:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px -6px rgba(0,0,0,0.35);
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--fg);
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .icon-btn:hover {
+    background: var(--border);
+    transform: translateY(-1px);
     text-decoration: none;
   }
+  .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+  /* トグルの太陽/月はテーマに応じて片方だけ表示 */
+  .theme-toggle .sun { display: none; }
+  .theme-toggle .moon { display: block; }
+  :root[data-theme="dark"] .theme-toggle .sun { display: block; }
+  :root[data-theme="dark"] .theme-toggle .moon { display: none; }
 
   /* ---------- hero ---------- */
   header.hero {
@@ -90,7 +124,7 @@
     z-index: -1;
     border-radius: 50%;
     filter: blur(60px);
-    opacity: 0.55;
+    opacity: var(--blob-opacity);
     animation: float 14s ease-in-out infinite;
   }
   .blob-1 {
@@ -172,7 +206,7 @@
     text-decoration: none;
   }
   .btn-secondary {
-    background: #fff;
+    background: var(--card-bg);
     color: var(--fg);
     border: 1px solid var(--border);
   }
@@ -291,7 +325,7 @@
   }
   .safety li {
     position: relative;
-    background: #fff;
+    background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 16px 18px 16px 52px;
@@ -305,8 +339,8 @@
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: #eafaf0;
-    color: #1f9d55;
+    background: var(--check-bg);
+    color: var(--check-fg);
     font-weight: 800;
     font-size: 0.8rem;
     display: flex;
@@ -336,7 +370,18 @@
     <img src="assets/favicon.png" alt="">
     Instagram CRM
   </a>
-  <a id="nav-download" class="nav-cta" href="https://github.com/kenshin-morioka/instagram-crm/releases/latest">ダウンロード</a>
+  <div class="nav-actions">
+    <a class="icon-btn" href="https://github.com/kenshin-morioka/instagram-crm" aria-label="GitHubリポジトリ" title="GitHub">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+    </a>
+    <a class="icon-btn" href="https://x.com/kenshin_morioka" aria-label="X (開発者アカウント)" title="X">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+    </a>
+    <button class="icon-btn theme-toggle" type="button" aria-label="ダークモード切り替え" title="テーマ切り替え">
+      <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-14a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1zm0 16a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1zm9-8a1 1 0 0 1-1 1h-1a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1zM5 12a1 1 0 0 1-1 1H3a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1zm12.66 6.66a1 1 0 0 1-1.41 0l-.71-.71a1 1 0 0 1 1.41-1.41l.71.71a1 1 0 0 1 0 1.41zM8.46 8.46a1 1 0 0 1-1.41 0l-.71-.71A1 1 0 0 1 7.75 6.34l.71.71a1 1 0 0 1 0 1.41zm9.2-2.12a1 1 0 0 1 0 1.41l-.71.71a1 1 0 1 1-1.41-1.41l.71-.71a1 1 0 0 1 1.41 0zM8.46 15.54a1 1 0 0 1 0 1.41l-.71.71a1 1 0 0 1-1.41-1.41l.71-.71a1 1 0 0 1 1.41 0z"/></svg>
+    </button>
+  </div>
 </nav>
 
 <header class="hero" id="top">
@@ -354,9 +399,8 @@
   </p>
   <div class="cta-row">
     <a id="download-btn" class="btn btn-primary" href="https://github.com/kenshin-morioka/instagram-crm/releases/latest">ダウンロード (macOS / Windows)</a>
-    <a class="btn btn-secondary" href="https://github.com/kenshin-morioka/instagram-crm">GitHubで見る</a>
+    <a class="btn btn-secondary" href="https://github.com/kenshin-morioka/instagram-crm/releases/latest">他のダウンロードオプション</a>
   </div>
-  <p class="os-note" id="alt-downloads"></p>
   <p class="os-note">無料・オープンソース（MIT License）。Linuxには対応していません。</p>
 </header>
 
@@ -454,8 +498,6 @@
   // 取得に失敗した場合はフォールバック (Releasesページへのリンク) のまま
   (function () {
     var downloadBtn = document.getElementById('download-btn');
-    var navDownload = document.getElementById('nav-download');
-    var altDownloads = document.getElementById('alt-downloads');
 
     fetch('https://api.github.com/repos/kenshin-morioka/instagram-crm/releases/latest')
       .then(function (res) { return res.ok ? res.json() : Promise.reject(res.status); })
@@ -469,30 +511,24 @@
         }
         var winMsi = assetUrl('.msi');
         var macArm = assetUrl('aarch64.dmg');
-        var macIntel = assetUrl('x64.dmg');
         var version = release.tag_name || '';
 
         var ua = navigator.userAgent;
         var url = null;
         var label = null;
-        var alt = [];
         if (ua.indexOf('Windows') !== -1 && winMsi) {
           url = winMsi;
           label = 'ダウンロード (Windows) ' + version;
         } else if (ua.indexOf('Mac') !== -1 && macArm) {
           // ブラウザからはApple Silicon / Intelを確実に判別できないため、
-          // 主流のApple Siliconを既定にしてIntel用リンクを併記する
+          // 主流のApple Siliconを既定にする (Intel等は「他のダウンロードオプション」から)
           url = macArm;
           label = 'ダウンロード (macOS) ' + version;
-          if (macIntel) alt.push('<a href="' + macIntel + '">Intel Macの方はこちら</a>');
         }
 
         if (url) {
           downloadBtn.href = url;
           downloadBtn.textContent = label;
-          navDownload.href = url;
-          alt.push('<a href="https://github.com/kenshin-morioka/instagram-crm/releases/latest">その他のダウンロード</a>');
-          altDownloads.innerHTML = alt.join(' · ');
         }
       })
       .catch(function () { /* フォールバックのままにする */ });

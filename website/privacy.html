@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="assets/theme.js"></script>
 <style>
   :root {
     --bg: #fafafa;
@@ -17,6 +18,34 @@
     --accent: #d6249f;
     --border: #ececef;
   }
+  :root[data-theme="dark"] {
+    --bg: #141118;
+    --fg: #f1eef5;
+    --muted: #a39daf;
+    --border: #2c2735;
+  }
+  html { color-scheme: light; }
+  :root[data-theme="dark"] { color-scheme: dark; }
+  .theme-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--fg);
+    cursor: pointer;
+  }
+  .theme-toggle svg { width: 20px; height: 20px; fill: currentColor; }
+  .theme-toggle .sun { display: none; }
+  .theme-toggle .moon { display: block; }
+  :root[data-theme="dark"] .theme-toggle .sun { display: block; }
+  :root[data-theme="dark"] .theme-toggle .moon { display: none; }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -46,6 +75,10 @@
 </style>
 </head>
 <body>
+<button class="theme-toggle" type="button" aria-label="ダークモード切り替え" title="テーマ切り替え">
+  <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-14a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1zm0 16a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1zm9-8a1 1 0 0 1-1 1h-1a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1zM5 12a1 1 0 0 1-1 1H3a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1zm12.66 6.66a1 1 0 0 1-1.41 0l-.71-.71a1 1 0 0 1 1.41-1.41l.71.71a1 1 0 0 1 0 1.41zM8.46 8.46a1 1 0 0 1-1.41 0l-.71-.71A1 1 0 0 1 7.75 6.34l.71.71a1 1 0 0 1 0 1.41zm9.2-2.12a1 1 0 0 1 0 1.41l-.71.71a1 1 0 1 1-1.41-1.41l.71-.71a1 1 0 0 1 1.41 0zM8.46 15.54a1 1 0 0 1 0 1.41l-.71.71a1 1 0 0 1-1.41-1.41l.71-.71a1 1 0 0 1 1.41 0z"/></svg>
+</button>
 <div class="wrap">
   <header>
     <a class="back" href="./">&larr; Instagram CRM</a>
