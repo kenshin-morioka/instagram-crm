@@ -262,6 +262,14 @@ setupGuideLink.addEventListener("click", (event) => {
   openUrl(setupGuideLink.href).catch((e) => showMessage(String(e)));
 });
 
+for (const link of document.querySelectorAll(".terms-doc-link")) {
+  link.addEventListener("click", (event) => {
+    // WebView内で遷移させず既定ブラウザで開く
+    event.preventDefault();
+    openUrl(link.href).catch((e) => showMessage(String(e)));
+  });
+}
+
 // バックエンドの上下限 (state.rs の定数) と同じ値
 const MIN_FETCH_LIMIT = 1;
 const MAX_FETCH_LIMIT = 25;

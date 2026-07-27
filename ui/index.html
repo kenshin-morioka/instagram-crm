@@ -244,18 +244,31 @@
     <div id="terms-overlay" class="terms-overlay" hidden>
       <div class="card terms-dialog" role="dialog" aria-modal="true" aria-labelledby="terms-title">
         <h2 id="terms-title">ご利用の前に</h2>
-        <p class="terms-lead">本アプリを利用するには、次の内容への同意が必要です。</p>
+        <p class="terms-lead">
+          本アプリを利用するには、<a
+            class="terms-doc-link"
+            href="https://kenshin-morioka.github.io/instagram-crm/terms.html"
+            >利用規約</a
+          >と<a
+            class="terms-doc-link"
+            href="https://kenshin-morioka.github.io/instagram-crm/privacy.html"
+            >プライバシーポリシー</a
+          >への同意が必要です。特に次の点をご確認ください。
+        </p>
         <ul class="terms-list">
           <li>
             Meta / Instagram の各種規約 (Instagram利用規約・Metaプラットフォーム規約 など)
-            を遵守して利用します
+            を遵守し、自身が管理するアカウントに対してのみ使用します
           </li>
-          <li>自動返信の内容と、その送信によって生じた結果の責任は利用者自身が負います</li>
-          <li>本アプリは MIT License に基づき無保証で提供されます</li>
+          <li>スパム行為 (無差別・大量の自動返信等) を目的とした利用は禁止です</li>
+          <li>
+            自動返信の内容とその結果、およびアクセストークンの管理の責任は利用者自身が負います
+          </li>
+          <li>本アプリは無保証で提供され、利用により生じた損害について開発者は責任を負いません</li>
         </ul>
         <label class="terms-agree">
           <input id="terms-checkbox" type="checkbox" />
-          上記の内容に同意します
+          利用規約とプライバシーポリシーに同意します
         </label>
         <button id="terms-accept" class="btn btn-gradient" disabled>同意して利用を開始</button>
       </div>
