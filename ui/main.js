@@ -16,6 +16,7 @@ const pausedBadge = document.getElementById("paused-badge");
 const pauseButton = document.getElementById("pause-button");
 const tokenForm = document.getElementById("token-form");
 const tokenInput = document.getElementById("token-input");
+const resetTokenButton = document.getElementById("reset-token-button");
 const connectButton = document.getElementById("connect-button");
 const replyText = document.getElementById("reply-text");
 const saveReply = document.getElementById("save-reply");
@@ -69,12 +70,15 @@ function showMessage(text) {
 let sendingPaused = false;
 let dryRun = true;
 let connecting = false;
+// 接続済み状態で「トークンを再設定」から入力フォームを開いているか。
+// renderStatusは2秒間隔で呼ばれるため、フラグで開閉状態を維持する
+let reconnectFormOpen = false;
 
 function renderStatus(payload) {
   const view = STATUS_VIEW[payload.status] ?? STATUS_VIEW.not_connected;
   statusText.textContent = view.text;
   statusDot.className = `dot ${view.dotClass}`;
-  tokenForm.hidden = !view.showConnect;
+  tokenForm.hidden = !(view.showConnect || reconnectFormOpen);
   lastRun.textContent = payload.last_run_at
     ? `最終チェック: ${payload.last_run_at}`
     : "-";
@@ -99,6 +103,12 @@ function renderStatus(payload) {
   const connected = payload.status === "connected";
   pauseButton.hidden = !connected;
   pauseButton.textContent = payload.sending_paused ? "送信を再開" : "送信を一時停止";
+
+  // 接続済みでもトークンを貼り直せるようにする (権限追加等での再発行時)
+  resetTokenButton.hidden = !connected;
+  resetTokenButton.textContent = reconnectFormOpen
+    ? "再設定をやめる"
+    : "トークンを再設定";
 
   modeBadge.textContent = payload.dry_run ? "ドライラン中 (送信なし)" : "実送信中";
   modeBadge.className = `mode-badge ${payload.dry_run ? "mode-dry" : "mode-live"}`;
@@ -143,7 +153,9 @@ connectButton.addEventListener("click", async () => {
   connectButton.disabled = true;
   statusText.textContent = "トークンを検証しています...";
   try {
-    renderStatus(await invoke("connect_with_token", { token: tokenInput.value }));
+    const payload = await invoke("connect_with_token", { token: tokenInput.value });
+    reconnectFormOpen = false;
+    renderStatus(payload);
     showMessage("Instagramと連携しました");
   } catch (e) {
     showMessage(String(e));
@@ -155,6 +167,15 @@ connectButton.addEventListener("click", async () => {
     connecting = false;
     connectButton.disabled = false;
   }
+});
+
+resetTokenButton.addEventListener("click", () => {
+  reconnectFormOpen = !reconnectFormOpen;
+  tokenForm.hidden = !reconnectFormOpen;
+  resetTokenButton.textContent = reconnectFormOpen
+    ? "再設定をやめる"
+    : "トークンを再設定";
+  if (reconnectFormOpen) tokenInput.focus();
 });
 
 dryRunButton.addEventListener("click", async () => {
