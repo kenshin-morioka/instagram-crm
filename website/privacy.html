@@ -72,6 +72,8 @@
   }
   ul { padding-left: 1.4em; }
   li { margin: 4px 0; }
+  /* 単語の途中で改行させたい語をspanで囲んで一塊として扱う */
+  .nobreak { display: inline-block; }
 </style>
 </head>
 <body>
@@ -81,12 +83,12 @@
 </button>
 <div class="wrap">
   <header>
-    <a class="back" href="./">&larr; Instagram CRM</a>
-    <h1>プライバシーポリシー</h1>
+    <a class="back" href="./">&larr; <span class="nobreak">Instagram CRM</span></a>
+    <h1><span class="nobreak">プライバシーポリシー</span></h1>
     <p class="updated">制定日: 2026-07-27</p>
   </header>
 
-  <p>Instagram CRM（以下「本アプリ」）は、自分のInstagramリールに付いたコメントへ定型文を自動返信する、macOS / Windows向けのデスクトップアプリです。本ポリシーは、本アプリにおける情報の取り扱いを定めるものです。</p>
+  <p><span class="nobreak">Instagram CRM</span>（以下「本アプリ」）は、自分の<span class="nobreak">Instagram</span>リールに付いた<span class="nobreak">コメント</span>へ<span class="nobreak">定型文</span>を<span class="nobreak">自動返信</span>する、macOS / Windows向けの<span class="nobreak">デスクトップアプリ</span>です。本ポリシーは、本アプリにおける情報の取り扱いを定めるものです。</p>
 
   <h2>1. 開発者によるデータ収集は行いません</h2>
   <p>本アプリはサーバーを持たず、開発者が利用者の情報を収集・保存・閲覧する仕組みは存在しません。アクセス解析やクラッシュレポート等の外部送信も行いません。</p>
@@ -94,19 +96,19 @@
   <h2>2. アプリが扱う情報と保存場所</h2>
   <p>本アプリが扱う情報は、すべて利用者自身の端末内にのみ保存されます。</p>
   <ul>
-    <li><strong>Instagramアクセストークン</strong> — OSの安全な保管領域（macOS Keychain / Windows資格情報マネージャー）に保存します。</li>
-    <li><strong>返信の処理記録</strong>（コメントID・返信結果等） — 二重返信を防止する目的で、端末内のデータベース（SQLite）に保存します。</li>
+    <li><strong><span class="nobreak">Instagram</span><span class="nobreak">アクセストークン</span></strong> — OSの安全な保管領域（macOS Keychain / Windows<span class="nobreak">資格情報マネージャー</span>）に保存します。</li>
+    <li><strong>返信の処理記録</strong>（<span class="nobreak">コメント</span>ID・返信結果等） — 二重返信を防止する目的で、端末内のデータベース（SQLite）に保存します。</li>
     <li><strong>アプリの設定</strong>（返信文・取得条件等） — 端末内の設定ファイルに保存します。</li>
   </ul>
 
   <h2>3. 外部との通信</h2>
-  <p>本アプリの外部通信は、Meta公式のInstagram Platform API（graph.instagram.com）に対するもののみです。通信はコメントの取得と返信の送信、トークンの検証・更新に限られます。</p>
+  <p>本アプリの外部通信は、<span class="nobreak">Meta公式</span>の<span class="nobreak">Instagram Platform API</span>（graph.instagram.com）に対するもののみです。通信は<span class="nobreak">コメント</span>の取得と返信の送信、トークンの検証・更新に限られます。</p>
 
   <h2>4. 第三者提供</h2>
   <p>本アプリが扱う情報を第三者に提供することはありません。</p>
 
-  <h2>5. Metaプラットフォームデータの取り扱い</h2>
-  <p>Instagram APIから取得したデータ（コメント等）は、返信の要否判定と重複防止の記録のためにのみ端末内で処理し、目的外の利用や外部への転送は行いません。取り扱いはMetaプラットフォーム利用規約および開発者ポリシーに従います。</p>
+  <h2>5. <span class="nobreak">Metaプラットフォームデータ</span>の取り扱い</h2>
+  <p><span class="nobreak">Instagram API</span>から取得したデータ（<span class="nobreak">コメント</span>等）は、返信の要否判定と重複防止の記録のためにのみ端末内で処理し、目的外の利用や外部への転送は行いません。取り扱いは<span class="nobreak">Metaプラットフォーム利用規約</span>および開発者ポリシーに従います。</p>
 
   <h2>6. データの削除</h2>
   <p>本アプリをアンインストールし、OSの保管領域からトークンを削除することで、本アプリが保存したすべてのデータを削除できます。アプリ内の連携解除操作でもトークンは削除されます。</p>
@@ -115,7 +117,7 @@
   <p>本ポリシーを変更する場合は、本ページで公表します。</p>
 
   <h2>8. お問い合わせ</h2>
-  <p>本ポリシーに関するお問い合わせは、<a href="https://github.com/kenshin-morioka/instagram-crm/issues" target="_blank" rel="noopener">GitHubリポジトリのIssue</a>までお寄せください。</p>
+  <p>本ポリシーに関するお問い合わせは、<a href="https://github.com/kenshin-morioka/instagram-crm/issues" target="_blank" rel="noopener"><span class="nobreak">GitHubリポジトリ</span>のIssue</a>までお寄せください。</p>
 </div>
 </body>
 </html>
