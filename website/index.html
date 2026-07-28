@@ -249,6 +249,8 @@
   .features {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    /* 全行を同じ高さに揃える (最終行にカードが1枚だけ残っても低くならない) */
+    grid-auto-rows: 1fr;
     gap: 20px;
   }
   .card {
@@ -462,7 +464,7 @@
   <section class="reveal">
     <h2>使い方</h2>
     <ol class="steps">
-      <li><strong>アプリをインストール</strong> — 上のダウンロードボタンを押すと、お使いのOSに合った<span class="nobreak">インストーラー</span> (macOS: <code>.dmg</code> / Windows: <code>.msi</code>) がダウンロードされます。macOSで「"Instagram CRM.app"は壊れているため開けません」と表示される場合は、Apple未公証のアプリをブラウザ経由でダウンロードした際にmacOSが表示する既知の警告です。<span class="nobreak">ターミナル</span>で以下を実行してから開いてください。<br><code>xattr -cr "/Applications/Instagram CRM.app"</code></li>
+      <li><strong>アプリをインストール</strong> — 上のダウンロードボタンを押すと、お使いのOSに合った<span class="nobreak">インストーラー</span> (macOS: <code>.dmg</code> / Windows: <code>.msi</code>) がダウンロードされます。</li>
       <li><strong>Metaの<span class="nobreak">アクセストークン</span>を発行</strong> — Instagramの<span class="nobreak">プロアカウント</span>（ビジネス/<span class="nobreak">クリエイター）</span>が必要です。手順は <a href="https://github.com/kenshin-morioka/instagram-crm/blob/main/docs/META_SETUP.md">META_SETUP.md</a> を参照してください。</li>
       <li><strong>アプリと連携</strong> — 発行した<span class="nobreak">トークン</span>をアプリに貼り付けて「連携する」を押します。</li>
       <li><strong>返信文を保存</strong> — 自動返信で送る定型文を入力して保存します。未設定のままでは自動返信は動きません。</li>
