@@ -1,39 +1,43 @@
-# 開発者向けガイド
+[English](CONTRIBUTING.md) | [日本語](CONTRIBUTING.ja.md)
 
-配布版を使わず自分でビルドしたい場合や、開発に参加する場合は以下の通りです。[Rust](https://www.rust-lang.org/) と [Node.js](https://nodejs.org/) が必要です。
+# Developer guide
 
-## ソースからビルドする
+Read this if you want to build the app yourself instead of using the released binaries, or if you want to contribute. You need [Rust](https://www.rust-lang.org/) and [Node.js](https://nodejs.org/).
+
+> **Note:** the linked documents under `docs/` are currently available in Japanese only.
+
+## Building from source
 
 ```sh
-# 開発時の起動
+# run in development mode
 cd src-tauri
 cargo run
 
-# 配布用アプリのビルド
+# build the distributable app
 npx @tauri-apps/cli build
-# → macOS: src-tauri/target/release/bundle/dmg/ 以下
-# → Windows: src-tauri/target/release/bundle/msi/ 以下
+# → macOS: under src-tauri/target/release/bundle/dmg/
+# → Windows: under src-tauri/target/release/bundle/msi/
 ```
 
-## テスト
+## Tests
 
-テストの実行（実 API への送信は行わず、すべてローカルで完結します）:
+Running the tests (nothing is sent to the real API; everything runs locally):
 
 ```sh
 cd src-tauri
 cargo test
 ```
 
-## 設計方針
+## Design
 
-設計方針は [docs/design_doc.md](docs/design_doc.md) を参照してください。
+See [docs/design_doc.md](docs/design_doc.md) for the design decisions behind the app.
 
-## Issue・プルリクエスト
+## Issues and pull requests
 
-このアプリは OSS として公開しています。**気になった点は、どんなことでも気軽に [Issue](https://github.com/kenshin-morioka/instagram-crm/issues) を立ててください。**
+This app is published as open source. **If anything catches your attention, please feel free to open an [Issue](https://github.com/kenshin-morioka/instagram-crm/issues) about it — anything at all.**
 
-- 「インストールでつまずいた」「この説明が分かりにくい」といった **初歩的な内容でも大歓迎** です
-- バグ報告・機能要望・改善提案、いずれも歓迎します
-- 「こういう使い方をしたい」という相談も気軽にどうぞ
+- Basic things like "I got stuck during installation" or "this explanation is hard to follow" are **very welcome**
+- Bug reports, feature requests, and improvement suggestions are all welcome
+- Questions like "I'd like to use it this way — is that possible?" are welcome too
 
-プルリクエストも歓迎します 🙌
+Pull requests are welcome as well 🙌
