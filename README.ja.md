@@ -1,0 +1,159 @@
+[English](README.md) | [日本語](README.ja.md)
+
+# Instagram CRM
+
+自分の Instagram リールに付いたコメントへ、公式 API を使って定型文を自動返信するアプリです。パソコンに常駐して、新しいコメントを一定間隔でチェックし、条件に合うものへ返信します。
+
+- **公式 API のみ使用** — Meta 公式の Instagram API (`graph.instagram.com`) だけを使います。スクレイピングや非公式 API、ブラウザ自動操作は一切使いません
+- **安全** — アクセストークンは OS 標準の保管領域 (macOS: キーチェーン / Windows: 資格情報マネージャー) に保存します
+- **まずは安全確認から** — 初期状態は「ドライラン」(返信せずログに出すだけ)。実際に送信を始めるにはボタンを押す必要があります
+- **対応 OS: macOS / Windows** — Linux では動作しません (トークン保存が両 OS のネイティブ機構前提のため)
+
+> 個人が自分のアカウント運用を効率化する目的のツールです。利用にあたっては Instagram / Meta の各種規約を守ってお使いください。
+
+---
+
+## 1. インストール
+
+### 事前に必要なもの
+
+- **Instagram のプロアカウント** (ビジネス または クリエイター)。個人アカウントのままでは API を利用できません
+- **Meta 側の準備**（アプリ登録・アクセストークンの発行）。手順は [docs/META_SETUP.md](docs/META_SETUP.md) にまとめています。少し手間ですが、一度だけ行えば大丈夫です
+
+### macOS
+
+1. [Releases ページ](https://github.com/kenshin-morioka/instagram-crm/releases) を開き、最新版の `.dmg` ファイルをダウンロードします
+2. ダウンロードした `.dmg` を開き、`Instagram CRM` を **アプリケーション** フォルダにドラッグします
+3. アプリを初めて起動するとき、「開発元を確認できないため開けません」と表示される場合があります。その場合は **アプリのアイコンを右クリック → 「開く」** を選び、確認ダイアログで再度「開く」を押してください（初回のみ）
+
+### Windows
+
+1. [Releases ページ](https://github.com/kenshin-morioka/instagram-crm/releases) を開き、最新版の `.msi`（インストーラー）をダウンロードします
+2. ダウンロードしたファイルをダブルクリックし、画面の指示に従ってインストールします
+3. 起動時に「WindowsによってPCが保護されました」と表示される場合は、**「詳細情報」→「実行」** の順にクリックしてください（初回のみ）
+
+> ⚠️ 上記の警告は、アプリに有償の署名証明書を付けていないために表示されるものです。表示が不安な場合は、[CONTRIBUTING.md](CONTRIBUTING.md) の手順で自分でビルドすることもできます。
+
+---
+
+## 2. 使い方
+
+### ① Meta のアクセストークンを用意する
+
+[docs/META_SETUP.md](docs/META_SETUP.md) の手順に沿って、**長期アクセストークン（60日有効）** を発行します。付与する権限は次の 2 つだけです。
+
+- `instagram_business_basic`
+- `instagram_business_manage_comments`
+
+### ② アプリと連携する
+
+1. アプリを起動します
+2. 「接続状態」欄に、①で発行したアクセストークンを貼り付けます
+3. 「連携する」ボタンを押します。連携に成功すると状態が表示されます
+
+### ③ ドライランで動作を確認する（重要）
+
+初期状態は **ドライラン（返信を送らず、対象だけログに記録するモード）** です。まずはこのまま数分〜数十分動かし、返信されるはずのコメントが意図どおりか、ログの `[DRY RUN]` 行で確認してください。
+
+ログの場所:
+
+- macOS: `~/Library/Logs/com.kenshinmorioka.instagram-crm/instagram-crm.log`
+- Windows: `%LOCALAPPDATA%\com.kenshinmorioka.instagram-crm\logs\`
+
+### ④ 実際の返信を始める
+
+確認できたら、アプリの **「ドライランを解除」** ボタンを押します。これ以降、条件に合うコメントへ実際に返信が送られます。
+
+### 返信する条件を絞り込む（任意）
+
+「全部に返信すると困る」場合は、下記の設定で対象を絞れます。設定ファイルは初回起動時に自動作成されます。
+
+場所（macOS）: `~/Library/Application Support/com.kenshinmorioka.instagram-crm/config.json`
+
+| 設定 | 既定 | 説明 |
+|---|---|---|
+| `allowed_media_ids` | （空） | 返信対象のリールを限定する（空 = 全リール） |
+| `reply_keywords` | （空） | コメント本文に指定した語を含む場合だけ返信（空 = 全件） |
+| `comment_lookback_hours` | 24 | これより古いコメントは対象外（初期値。アプリの画面から変更可） |
+| `max_comment_length` | 500 | これより長いコメントは対象外 |
+| `usage_pause_threshold_pct` | 90 | API 使用量がこの % を超えたら送信を一時停止 |
+
+返信文・チェック間隔（ポーリング間隔）・取得範囲（対象リール数とコメント対象期間）は、アプリの画面から変更できます。全項目は [config.example.json](config.example.json) を参照してください。
+
+### 困ったとき
+
+トークンが切れた・返信を止めたい（kill switch）などの対処は [docs/OPERATIONS_RUNBOOK.md](docs/OPERATIONS_RUNBOOK.md) を参照してください。
+
+---
+
+## 3. アンインストール
+
+アプリ本体を削除するだけでは、設定やログなどのデータがパソコンに残ります。完全に削除したい場合は以下の手順で行ってください。
+
+### まず: Instagram 側の連携解除（macOS / Windows 共通・推奨）
+
+アクセストークン自体を無効化するため、先に連携を解除しておくと安心です。
+
+- Instagram アプリ: 設定 → アプリとウェブサイト → 該当アプリの連携を解除
+
+### macOS
+
+1. アプリを終了します（メニューバーのアイコン → Quit）
+2. **アプリケーション** フォルダから `Instagram CRM` をゴミ箱に入れます
+3. 残ったデータを削除します。「ターミナル」アプリで以下を実行してください:
+
+   ```sh
+   # 設定・返信履歴・ログ・キャッシュ
+   rm -rf ~/Library/"Application Support"/com.kenshinmorioka.instagram-crm
+   rm -rf ~/Library/Logs/com.kenshinmorioka.instagram-crm
+   rm -rf ~/Library/Caches/com.kenshinmorioka.instagram-crm
+   rm -rf ~/Library/WebKit/com.kenshinmorioka.instagram-crm
+
+   # キーチェーンに保存されたアクセストークン
+   security delete-generic-password -s com.kenshinmorioka.instagram-crm -a instagram-token
+   ```
+
+### Windows
+
+1. アプリを終了します（タスクトレイのアイコン → Quit）
+2. 設定 → アプリ → インストールされているアプリ → `Instagram CRM` → アンインストール
+3. 残ったデータを削除します。エクスプローラーのアドレスバーに以下を貼り付けて開き、`com.kenshinmorioka.instagram-crm` フォルダを削除してください:
+   - `%APPDATA%`（設定・返信履歴）
+   - `%LOCALAPPDATA%`（ログ・WebView データ）
+4. 保存されたアクセストークンを削除します:
+   - コントロールパネル → 資格情報マネージャー → Windows 資格情報 →
+     `com.kenshinmorioka.instagram-crm` を含む項目を削除
+
+---
+
+## 4. 品質・安全性について
+
+安心して使っていただくために、次の方針で作っています。
+
+- **公式 API のみ** — 外部への通信は Meta 公式 API (`graph.instagram.com`) だけ。非公式 API・スクレイピング・ブラウザ自動操作は使いません
+- **最小限の権限** — 要求する権限はコメントの取得・返信に必要な 2 つのみ。投稿の公開やメッセージ送信の権限は要求しません
+- **トークンを安全に保管** — アクセストークンは OS 標準の保管領域に保存します。設定ファイルやログには書き出しません
+- **初期状態はドライラン** — 誤送信を防ぐため、明示的にボタンを押すまで実際の返信は行いません
+- **二重返信を防止** — 一度返信したコメントは記録し、同じコメントへ重複して返信しません
+- **プライバシーに配慮したログ** — トークンの実値・コメント本文・ユーザー名はログに出力しません
+- **API 制限への配慮** — レート制限（HTTP 429）に対して自動でバックオフし、使用量がしきい値を超えると自動で一時停止します
+
+第三者が参照できる静的レビュー（規約準拠の観点）の結果は [docs/COMPLIANCE_AUDIT.md](docs/COMPLIANCE_AUDIT.md) にまとめています。
+
+---
+
+## 5. Issue・フィードバック歓迎
+
+このアプリは OSS として公開しています。**気になった点は、どんなことでも気軽に [Issue](https://github.com/kenshin-morioka/instagram-crm/issues) を立ててください。**
+
+- 「インストールでつまずいた」「この説明が分かりにくい」といった **初歩的な内容でも大歓迎** です
+- バグ報告・機能要望・改善提案、いずれも歓迎します
+- 「こういう使い方をしたい」という相談も気軽にどうぞ
+
+プルリクエストも歓迎します 🙌 開発に参加する場合は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
+
+---
+
+## 6. ライセンス
+
+[MIT License](LICENSE) で公開しています。改変・再配布は自由ですが、**本ソフトウェアは無保証で提供され、作者は利用によって生じたいかなる損害についても責任を負いません。** 各自の責任のもとでご利用ください。

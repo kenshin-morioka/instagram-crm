@@ -1,157 +1,161 @@
+[English](README.md) | [日本語](README.ja.md)
+
 # Instagram CRM
 
-自分の Instagram リールに付いたコメントへ、公式 API を使って定型文を自動返信するアプリです。パソコンに常駐して、新しいコメントを一定間隔でチェックし、条件に合うものへ返信します。
+A desktop app that automatically replies to comments on your own Instagram Reels with a canned message, using the official API. It runs in the background on your computer, checks for new comments at a fixed interval, and replies to the ones that match your conditions.
 
-- **公式 API のみ使用** — Meta 公式の Instagram API (`graph.instagram.com`) だけを使います。スクレイピングや非公式 API、ブラウザ自動操作は一切使いません
-- **安全** — アクセストークンは OS 標準の保管領域 (macOS: キーチェーン / Windows: 資格情報マネージャー) に保存します
-- **まずは安全確認から** — 初期状態は「ドライラン」(返信せずログに出すだけ)。実際に送信を始めるにはボタンを押す必要があります
-- **対応 OS: macOS / Windows** — Linux では動作しません (トークン保存が両 OS のネイティブ機構前提のため)
+- **Official API only** — it talks to Meta's official Instagram API (`graph.instagram.com`) and nothing else. No scraping, no unofficial APIs, no browser automation
+- **Safe by design** — access tokens are stored in the OS credential store (macOS: Keychain / Windows: Credential Manager)
+- **Verify before you send** — dry-run mode is the default (matches are logged, no replies are sent). You have to press a button to start sending for real
+- **Supported OS: macOS / Windows** — Linux is not supported (token storage relies on the native mechanisms of these two platforms)
 
-> 個人が自分のアカウント運用を効率化する目的のツールです。利用にあたっては Instagram / Meta の各種規約を守ってお使いください。
+> This is a tool for individuals who want to streamline running their own account. Please comply with the Instagram / Meta terms of service when using it.
+
+> **Note:** the linked documents under `docs/` are currently available in Japanese only.
 
 ---
 
-## 1. インストール
+## 1. Installation
 
-### 事前に必要なもの
+### Prerequisites
 
-- **Instagram のプロアカウント** (ビジネス または クリエイター)。個人アカウントのままでは API を利用できません
-- **Meta 側の準備**（アプリ登録・アクセストークンの発行）。手順は [docs/META_SETUP.md](docs/META_SETUP.md) にまとめています。少し手間ですが、一度だけ行えば大丈夫です
+- **An Instagram professional account** (Business or Creator). The API is not available for personal accounts
+- **Setup on Meta's side** (registering an app and issuing an access token). The steps are documented in [docs/META_SETUP.md](docs/META_SETUP.md). It takes a bit of effort, but you only need to do it once
 
 ### macOS
 
-1. [Releases ページ](https://github.com/kenshin-morioka/instagram-crm/releases) を開き、最新版の `.dmg` ファイルをダウンロードします
-2. ダウンロードした `.dmg` を開き、`Instagram CRM` を **アプリケーション** フォルダにドラッグします
-3. アプリを初めて起動するとき、「開発元を確認できないため開けません」と表示される場合があります。その場合は **アプリのアイコンを右クリック → 「開く」** を選び、確認ダイアログで再度「開く」を押してください（初回のみ）
+1. Open the [Releases page](https://github.com/kenshin-morioka/instagram-crm/releases) and download the latest `.dmg` file
+2. Open the downloaded `.dmg` and drag `Instagram CRM` into your **Applications** folder
+3. The first time you launch the app, macOS may say it cannot be opened because the developer cannot be verified. In that case, **right-click the app icon → "Open"**, then press "Open" again in the confirmation dialog (first launch only)
 
 ### Windows
 
-1. [Releases ページ](https://github.com/kenshin-morioka/instagram-crm/releases) を開き、最新版の `.msi`（インストーラー）をダウンロードします
-2. ダウンロードしたファイルをダブルクリックし、画面の指示に従ってインストールします
-3. 起動時に「WindowsによってPCが保護されました」と表示される場合は、**「詳細情報」→「実行」** の順にクリックしてください（初回のみ）
+1. Open the [Releases page](https://github.com/kenshin-morioka/instagram-crm/releases) and download the latest `.msi` (installer)
+2. Double-click the downloaded file and follow the on-screen instructions
+3. If "Windows protected your PC" appears at launch, click **"More info" → "Run anyway"** (first launch only)
 
-> ⚠️ 上記の警告は、アプリに有償の署名証明書を付けていないために表示されるものです。表示が不安な場合は、[CONTRIBUTING.md](CONTRIBUTING.md) の手順で自分でビルドすることもできます。
+> ⚠️ These warnings appear because the app is not signed with a paid code-signing certificate. If that makes you uncomfortable, you can build it yourself by following [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-## 2. 使い方
+## 2. Usage
 
-### ① Meta のアクセストークンを用意する
+### ① Get a Meta access token
 
-[docs/META_SETUP.md](docs/META_SETUP.md) の手順に沿って、**長期アクセストークン（60日有効）** を発行します。付与する権限は次の 2 つだけです。
+Follow [docs/META_SETUP.md](docs/META_SETUP.md) to issue a **long-lived access token (valid for 60 days)**. Only these two permissions are needed:
 
 - `instagram_business_basic`
 - `instagram_business_manage_comments`
 
-### ② アプリと連携する
+### ② Connect the app
 
-1. アプリを起動します
-2. 「接続状態」欄に、①で発行したアクセストークンを貼り付けます
-3. 「連携する」ボタンを押します。連携に成功すると状態が表示されます
+1. Launch the app
+2. Paste the access token from step ① into the "Connection status" field
+3. Press the "Connect" button. Once the connection succeeds, the status is displayed
 
-### ③ ドライランで動作を確認する（重要）
+### ③ Check the behavior in dry-run mode (important)
 
-初期状態は **ドライラン（返信を送らず、対象だけログに記録するモード）** です。まずはこのまま数分〜数十分動かし、返信されるはずのコメントが意図どおりか、ログの `[DRY RUN]` 行で確認してください。
+The app starts in **dry-run mode (no replies are sent; matching comments are only written to the log)**. Leave it running for a few minutes to a few tens of minutes first, and use the `[DRY RUN]` lines in the log to confirm that the comments it would reply to are the ones you expect.
 
-ログの場所:
+Log location:
 
 - macOS: `~/Library/Logs/com.kenshinmorioka.instagram-crm/instagram-crm.log`
 - Windows: `%LOCALAPPDATA%\com.kenshinmorioka.instagram-crm\logs\`
 
-### ④ 実際の返信を始める
+### ④ Start replying for real
 
-確認できたら、アプリの **「ドライランを解除」** ボタンを押します。これ以降、条件に合うコメントへ実際に返信が送られます。
+Once you are satisfied, press the **"Disable dry run"** button in the app. From then on, replies are actually sent to comments that match your conditions.
 
-### 返信する条件を絞り込む（任意）
+### Narrowing down which comments get a reply (optional)
 
-「全部に返信すると困る」場合は、下記の設定で対象を絞れます。設定ファイルは初回起動時に自動作成されます。
+If replying to everything is not what you want, the settings below let you narrow the scope. The config file is created automatically on first launch.
 
-場所（macOS）: `~/Library/Application Support/com.kenshinmorioka.instagram-crm/config.json`
+Location (macOS): `~/Library/Application Support/com.kenshinmorioka.instagram-crm/config.json`
 
-| 設定 | 既定 | 説明 |
+| Setting | Default | Description |
 |---|---|---|
-| `allowed_media_ids` | （空） | 返信対象のリールを限定する（空 = 全リール） |
-| `reply_keywords` | （空） | コメント本文に指定した語を含む場合だけ返信（空 = 全件） |
-| `comment_lookback_hours` | 24 | これより古いコメントは対象外（初期値。アプリの画面から変更可） |
-| `max_comment_length` | 500 | これより長いコメントは対象外 |
-| `usage_pause_threshold_pct` | 90 | API 使用量がこの % を超えたら送信を一時停止 |
+| `allowed_media_ids` | (empty) | Limit which Reels are eligible for replies (empty = all Reels) |
+| `reply_keywords` | (empty) | Reply only when the comment body contains one of these words (empty = all comments) |
+| `comment_lookback_hours` | 24 | Comments older than this are skipped (initial value; changeable from the app UI) |
+| `max_comment_length` | 500 | Comments longer than this are skipped |
+| `usage_pause_threshold_pct` | 90 | Pause sending once API usage exceeds this percentage |
 
-返信文・チェック間隔（ポーリング間隔）・取得範囲（対象リール数とコメント対象期間）は、アプリの画面から変更できます。全項目は [config.example.json](config.example.json) を参照してください。
+The reply text, the check (polling) interval, and the fetch scope (number of target Reels and the comment time window) can be changed from the app UI. See [config.example.json](config.example.json) for the full list of settings.
 
-### 困ったとき
+### Troubleshooting
 
-トークンが切れた・返信を止めたい（kill switch）などの対処は [docs/OPERATIONS_RUNBOOK.md](docs/OPERATIONS_RUNBOOK.md) を参照してください。
+For an expired token, stopping replies (kill switch), and similar situations, see [docs/OPERATIONS_RUNBOOK.md](docs/OPERATIONS_RUNBOOK.md).
 
 ---
 
-## 3. アンインストール
+## 3. Uninstalling
 
-アプリ本体を削除するだけでは、設定やログなどのデータがパソコンに残ります。完全に削除したい場合は以下の手順で行ってください。
+Deleting the app itself leaves data such as settings and logs on your computer. To remove everything, follow the steps below.
 
-### まず: Instagram 側の連携解除（macOS / Windows 共通・推奨）
+### First: revoke the connection on Instagram (macOS / Windows, recommended)
 
-アクセストークン自体を無効化するため、先に連携を解除しておくと安心です。
+Revoking the connection first invalidates the access token itself, which is the safer order.
 
-- Instagram アプリ: 設定 → アプリとウェブサイト → 該当アプリの連携を解除
+- Instagram app: Settings → Apps and websites → remove the app's access
 
 ### macOS
 
-1. アプリを終了します（メニューバーのアイコン → Quit）
-2. **アプリケーション** フォルダから `Instagram CRM` をゴミ箱に入れます
-3. 残ったデータを削除します。「ターミナル」アプリで以下を実行してください:
+1. Quit the app (menu bar icon → Quit)
+2. Move `Instagram CRM` from the **Applications** folder to the Trash
+3. Delete the leftover data. Run the following in the "Terminal" app:
 
    ```sh
-   # 設定・返信履歴・ログ・キャッシュ
+   # settings, reply history, logs, cache
    rm -rf ~/Library/"Application Support"/com.kenshinmorioka.instagram-crm
    rm -rf ~/Library/Logs/com.kenshinmorioka.instagram-crm
    rm -rf ~/Library/Caches/com.kenshinmorioka.instagram-crm
    rm -rf ~/Library/WebKit/com.kenshinmorioka.instagram-crm
 
-   # キーチェーンに保存されたアクセストークン
+   # the access token stored in Keychain
    security delete-generic-password -s com.kenshinmorioka.instagram-crm -a instagram-token
    ```
 
 ### Windows
 
-1. アプリを終了します（タスクトレイのアイコン → Quit）
-2. 設定 → アプリ → インストールされているアプリ → `Instagram CRM` → アンインストール
-3. 残ったデータを削除します。エクスプローラーのアドレスバーに以下を貼り付けて開き、`com.kenshinmorioka.instagram-crm` フォルダを削除してください:
-   - `%APPDATA%`（設定・返信履歴）
-   - `%LOCALAPPDATA%`（ログ・WebView データ）
-4. 保存されたアクセストークンを削除します:
-   - コントロールパネル → 資格情報マネージャー → Windows 資格情報 →
-     `com.kenshinmorioka.instagram-crm` を含む項目を削除
+1. Quit the app (system tray icon → Quit)
+2. Settings → Apps → Installed apps → `Instagram CRM` → Uninstall
+3. Delete the leftover data. Paste the following into the Explorer address bar, open each location, and delete the `com.kenshinmorioka.instagram-crm` folder:
+   - `%APPDATA%` (settings, reply history)
+   - `%LOCALAPPDATA%` (logs, WebView data)
+4. Delete the stored access token:
+   - Control Panel → Credential Manager → Windows Credentials →
+     delete the entries containing `com.kenshinmorioka.instagram-crm`
 
 ---
 
-## 4. 品質・安全性について
+## 4. Quality and safety
 
-安心して使っていただくために、次の方針で作っています。
+The app is built along the following principles so that you can use it with confidence.
 
-- **公式 API のみ** — 外部への通信は Meta 公式 API (`graph.instagram.com`) だけ。非公式 API・スクレイピング・ブラウザ自動操作は使いません
-- **最小限の権限** — 要求する権限はコメントの取得・返信に必要な 2 つのみ。投稿の公開やメッセージ送信の権限は要求しません
-- **トークンを安全に保管** — アクセストークンは OS 標準の保管領域に保存します。設定ファイルやログには書き出しません
-- **初期状態はドライラン** — 誤送信を防ぐため、明示的にボタンを押すまで実際の返信は行いません
-- **二重返信を防止** — 一度返信したコメントは記録し、同じコメントへ重複して返信しません
-- **プライバシーに配慮したログ** — トークンの実値・コメント本文・ユーザー名はログに出力しません
-- **API 制限への配慮** — レート制限（HTTP 429）に対して自動でバックオフし、使用量がしきい値を超えると自動で一時停止します
+- **Official API only** — the only outbound communication is to Meta's official API (`graph.instagram.com`). No unofficial APIs, no scraping, no browser automation
+- **Minimal permissions** — only the two permissions required to read and reply to comments are requested. No permissions for publishing posts or sending messages
+- **Tokens stored securely** — access tokens are kept in the OS credential store. They are never written to config files or logs
+- **Dry run by default** — to prevent accidental sends, no real replies happen until you explicitly press the button
+- **No duplicate replies** — replied comments are recorded, so the same comment never gets a second reply
+- **Privacy-conscious logging** — token values, comment bodies, and usernames are never written to the log
+- **Respectful of API limits** — it backs off automatically on rate limits (HTTP 429), and pauses automatically once usage exceeds the threshold
 
-第三者が参照できる静的レビュー（規約準拠の観点）の結果は [docs/COMPLIANCE_AUDIT.md](docs/COMPLIANCE_AUDIT.md) にまとめています。
-
----
-
-## 5. Issue・フィードバック歓迎
-
-このアプリは OSS として公開しています。**気になった点は、どんなことでも気軽に [Issue](https://github.com/kenshin-morioka/instagram-crm/issues) を立ててください。**
-
-- 「インストールでつまずいた」「この説明が分かりにくい」といった **初歩的な内容でも大歓迎** です
-- バグ報告・機能要望・改善提案、いずれも歓迎します
-- 「こういう使い方をしたい」という相談も気軽にどうぞ
-
-プルリクエストも歓迎します 🙌 開発に参加する場合は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
+The results of a static review from a terms-compliance perspective, available for third parties to inspect, are documented in [docs/COMPLIANCE_AUDIT.md](docs/COMPLIANCE_AUDIT.md).
 
 ---
 
-## 6. ライセンス
+## 5. Issues and feedback welcome
 
-[MIT License](LICENSE) で公開しています。改変・再配布は自由ですが、**本ソフトウェアは無保証で提供され、作者は利用によって生じたいかなる損害についても責任を負いません。** 各自の責任のもとでご利用ください。
+This app is published as open source. **If anything catches your attention, please feel free to open an [Issue](https://github.com/kenshin-morioka/instagram-crm/issues) about it — anything at all.**
+
+- Basic things like "I got stuck during installation" or "this explanation is hard to follow" are **very welcome**
+- Bug reports, feature requests, and improvement suggestions are all welcome
+- Questions like "I'd like to use it this way — is that possible?" are welcome too
+
+Pull requests are welcome as well 🙌 If you want to contribute, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
+## 6. License
+
+Released under the [MIT License](LICENSE). You are free to modify and redistribute it, but **this software is provided without warranty, and the author is not liable for any damages arising from its use.** Use it at your own risk.
