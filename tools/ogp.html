@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<!--
+  website/assets/ogp.png の生成元。website/ 配下には置かない (Pagesで公開されるため)。
+
+  再生成手順 (website/ をルートにサーブし、assets/icon.png を解決させる):
+    cp tools/ogp.html website/_ogp.html
+    (cd website && python3 -m http.server 8950 &)
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
+      --disable-gpu --hide-scrollbars --force-device-scale-factor=1 \
+      --virtual-time-budget=6000 --window-size=1200,630 \
+      --screenshot="website/assets/ogp.png" http://localhost:8950/_ogp.html
+    rm website/_ogp.html
+-->
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    width: 1200px; height: 630px;
+    background: #141118;
+    font-family: "Inter", "Noto Sans JP", sans-serif;
+    color: #f1eef5;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 88px;
+  }
+  .blob { position: absolute; border-radius: 50%; filter: blur(90px); }
+  .b1 { width: 560px; height: 560px; top: -220px; left: -160px; background: #d6249f; opacity: 0.42; }
+  .b2 { width: 460px; height: 460px; bottom: -220px; right: -80px; background: #fd9a3c; opacity: 0.30; }
+  .b3 { width: 520px; height: 520px; top: 120px; right: 180px; background: #8134af; opacity: 0.38; }
+
+  .content { position: relative; z-index: 1; }
+  .icon {
+    width: 132px; height: 132px;
+    border-radius: 32px;
+    box-shadow: 0 24px 60px -20px rgba(0,0,0,0.7);
+    margin-bottom: 40px;
+  }
+  h1 {
+    font-size: 76px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    background: linear-gradient(100deg, #ff5fc0 0%, #b070ff 52%, #ffb765 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  p.tagline {
+    margin-top: 22px;
+    font-size: 31px;
+    font-weight: 500;
+    color: #c9c2d6;
+    letter-spacing: 0.01em;
+  }
+  .chips { margin-top: 44px; display: flex; gap: 14px; }
+  .chip {
+    font-size: 21px;
+    font-weight: 600;
+    color: #e6e1ee;
+    padding: 11px 22px;
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+  }
+
+  .thread { position: relative; z-index: 1; width: 428px; display: grid; gap: 18px; }
+  .bubble {
+    border-radius: 22px;
+    padding: 20px 24px;
+    font-size: 23px;
+    line-height: 1.5;
+    backdrop-filter: blur(6px);
+  }
+  .bubble.comment {
+    background: rgba(255,255,255,0.09);
+    border: 1px solid rgba(255,255,255,0.16);
+    color: #ece8f3;
+    border-bottom-left-radius: 6px;
+  }
+  .bubble.reply {
+    margin-left: 32px;
+    background: linear-gradient(120deg, #d6249f, #8134af);
+    border-bottom-right-radius: 6px;
+    color: #fff;
+    box-shadow: 0 18px 40px -18px rgba(214, 36, 159, 0.8);
+  }
+  .bubble .who {
+    display: block;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    opacity: 0.72;
+    margin-bottom: 6px;
+  }
+</style>
+</head>
+<body>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+  <div class="content">
+    <img class="icon" src="assets/icon.png" alt="">
+    <h1>Instagram CRM</h1>
+    <p class="tagline">Instagramリールのコメントへ、<br>公式APIで定型文を自動返信</p>
+    <div class="chips">
+      <span class="chip">macOS / Windows</span>
+      <span class="chip">無料</span>
+      <span class="chip">オープンソース</span>
+    </div>
+  </div>
+  <div class="thread">
+    <div class="bubble comment"><span class="who">コメント</span>これ作り方知りたい！</div>
+    <div class="bubble reply"><span class="who">自動返信</span>コメントありがとうございます！</div>
+  </div>
+</body>
+</html>
