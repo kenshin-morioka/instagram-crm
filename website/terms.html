@@ -72,6 +72,8 @@
   }
   ul { padding-left: 1.4em; }
   li { margin: 4px 0; }
+  /* 単語の途中で改行させたい語をspanで囲んで一塊として扱う */
+  .nobreak { display: inline-block; }
 </style>
 </head>
 <body>
@@ -89,14 +91,14 @@
   <p>本規約は、Instagram CRM（以下「本アプリ」）の利用条件を定めるものです。本アプリをダウンロードまたは利用した時点で、本規約に同意したものとみなします。</p>
 
   <h2>1. 本アプリについて</h2>
-  <p>本アプリは、利用者自身のInstagramプロアカウントのリールに付いたコメントへ、Meta公式のInstagram Platform APIを通じて定型文を自動返信する、無料・オープンソースのデスクトップアプリです。ソースコードはMITライセンスで<a href="https://github.com/kenshin-morioka/instagram-crm" target="_blank" rel="noopener">GitHub</a>に公開されています。</p>
+  <p>本アプリは、利用者自身のInstagram<span class="nobreak">プロアカウント</span>の<span class="nobreak">リール</span>に付いた<span class="nobreak">コメント</span>へ、Meta公式のInstagram Platform APIを通じて定型文を自動返信する、無料・<span class="nobreak">オープンソース</span>の<span class="nobreak">デスクトップアプリ</span>です。<span class="nobreak">ソースコード</span>はMITライセンスで<a href="https://github.com/kenshin-morioka/instagram-crm" target="_blank" rel="noopener">GitHub</a>に公開されています。</p>
 
   <h2>2. 利用条件</h2>
   <ul>
     <li>本アプリは、利用者自身が管理するInstagramアカウントに対してのみ使用してください。</li>
-    <li>利用者は、Instagramの利用規約およびMetaプラットフォーム利用規約を遵守する責任を負います。</li>
-    <li>スパム行為（無差別・大量の自動返信等）を目的とした利用を禁止します。</li>
-    <li>アクセストークンの管理は利用者自身の責任で行ってください。</li>
+    <li>利用者は、Instagramの利用規約および<span class="nobreak">Metaプラットフォーム利用規約</span>を遵守する責任を負います。</li>
+    <li><span class="nobreak">スパム行為</span>（無差別・大量の自動返信等）を目的とした利用を禁止します。</li>
+    <li><span class="nobreak">アクセストークン</span>の管理は利用者自身の責任で行ってください。</li>
   </ul>
 
   <h2>3. 無保証</h2>
@@ -109,7 +111,7 @@
   <p>本アプリはMetaが提供するInstagram Platform APIを利用します。API仕様や提供条件はMetaにより変更されることがあり、それに伴い本アプリの機能が制限・停止される場合があります。本アプリはMeta社が提供・後援するものではありません。</p>
 
   <h2>6. プライバシー</h2>
-  <p>情報の取り扱いについては<a href="privacy.html">プライバシーポリシー</a>をご確認ください。</p>
+  <p>情報の取り扱いについては<a href="privacy.html"><span class="nobreak">プライバシーポリシー</span></a>をご確認ください。</p>
 
   <h2>7. 規約の変更</h2>
   <p>本規約を変更する場合は、本ページで公表します。変更後に本アプリの利用を継続した場合、変更に同意したものとみなします。</p>
