@@ -452,12 +452,6 @@
         <p>レート制限（HTTP 429 やMetaのレート制限エラー）を検出するとRetry-Afterを尊重しつつ指数バックオフし、API使用量がしきい値（既定90%）を超えると送信を自動で一時停止します。</p>
       </div>
       <div class="card">
-        <span class="emoji">🦀</span>
-        <h3>Rust製で軽量・安全</h3>
-        <p>アプリ本体はRustとTauriで実装。インストーラーは約5MBと小さく、メモリ安全性の高いRustで書かれているため、常駐させたまま長く動かす用途に向いています。</p>
-        <p class="note">※ アプリのコードにunsafe（安全性検査を外す記述）は一切ありません。</p>
-      </div>
-      <div class="card">
         <span class="emoji">💻</span>
         <h3>クロスプラットフォーム</h3>
         <p>Windows、macOSに対応しています。</p>
