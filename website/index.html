@@ -256,6 +256,8 @@
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 22px;
+    /* 文章が短いカードだけ極端に低くならないよう下限を設ける */
+    min-height: 200px;
     transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   }
   .card:hover {
@@ -448,6 +450,12 @@
         <span class="emoji">⏱️</span>
         <h3>API制限への配慮</h3>
         <p>レート制限（HTTP 429 やMetaのレート制限エラー）を検出するとRetry-Afterを尊重しつつ指数バックオフし、API使用量がしきい値（既定90%）を超えると送信を自動で一時停止します。</p>
+      </div>
+      <div class="card">
+        <span class="emoji">🦀</span>
+        <h3>Rust製で軽量・安全</h3>
+        <p>アプリ本体はRustとTauriで実装。インストーラーは約5MBと小さく、メモリ安全性の高いRustで書かれているため、常駐させたまま長く動かす用途に向いています。</p>
+        <p class="note">※ アプリのコードにunsafe（安全性検査を外す記述）は一切ありません。</p>
       </div>
       <div class="card">
         <span class="emoji">💻</span>
