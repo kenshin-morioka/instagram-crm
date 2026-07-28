@@ -398,14 +398,14 @@
   </span>
   <h1>Instagram CRM</h1>
   <p class="tagline">
-    自分の<span class="nobreak">Instagram</span>リールに付いた<span class="nobreak">コメント</span>へ、<span class="nobreak">公式API</span>を使って<span class="nobreak">定型文</span>を<span class="nobreak">自動返信</span>。<br>
-    パソコンに<span class="nobreak">常駐</span>して、条件に合う<span class="nobreak">コメント</span>だけに返信します。
+    自分のInstagram<span class="nobreak">リール</span>に付いた<span class="nobreak">コメント</span>へ、公式APIを使って定型文を自動返信。<br>
+    パソコンに常駐して、条件に合う<span class="nobreak">コメント</span>だけに返信します。
   </p>
   <div class="cta-row">
     <a id="download-btn" class="btn btn-primary" href="https://github.com/kenshin-morioka/instagram-crm/releases/latest">ダウンロード (macOS / Windows)</a>
     <a class="btn btn-secondary" href="https://github.com/kenshin-morioka/instagram-crm/releases/latest">他のダウンロードオプション</a>
   </div>
-  <p class="os-note">無料・<span class="nobreak">オープンソース</span>（<span class="nobreak">MIT License</span>）。<span class="nobreak">Linux</span>には対応していません。</p>
+  <p class="os-note">無料・<span class="nobreak">オープンソース</span>（MIT License）。Linuxには対応していません。</p>
 </header>
 
 <div class="wrap">
@@ -416,32 +416,32 @@
       <div class="card">
         <span class="emoji">🔒</span>
         <h3>公式APIのみ使用</h3>
-        <p><span class="nobreak">Meta公式</span>の<span class="nobreak">Instagram API</span> (<span class="nobreak">graph.instagram.com</span>) だけを使用。<span class="nobreak">スクレイピング</span>や<span class="nobreak">非公式API</span>、<span class="nobreak">ブラウザ自動操作</span>は一切行いません。</p>
+        <p>Meta公式のInstagram API (graph.instagram.com) だけを使用。スクレイピングや非公式API、ブラウザ自動操作は一切行いません。</p>
       </div>
       <div class="card">
         <span class="emoji">🗝️</span>
         <h3>安全なトークン保管</h3>
-        <p><span class="nobreak">アクセストークン</span>は<span class="nobreak">OS標準</span>の保管領域（<span class="nobreak">macOS: キーチェーン</span> / <span class="nobreak">Windows: 資格情報マネージャー</span>）に保存します。</p>
+        <p>アクセストークンはOS標準の保管領域（macOS: キーチェーン / Windows: 資格情報マネージャー）に保存します。</p>
       </div>
       <div class="card">
         <span class="emoji">🧪</span>
         <h3>まずはドライランで確認</h3>
-        <p>初期状態は返信を送らず、対象を<span class="nobreak">ログ</span>と履歴に記録するだけの「<span class="nobreak">ドライラン</span>」。実際の送信は「<span class="nobreak">実送信を開始する</span>」ボタンを押して初めて始まります。</p>
+        <p>初期状態は返信を送らず、対象をログと履歴に記録するだけの「ドライラン」。実際の送信は「実送信を開始する」ボタンを押して初めて始まります。</p>
       </div>
       <div class="card">
         <span class="emoji">🎯</span>
         <h3>返信対象を絞り込める</h3>
-        <p>対象<span class="nobreak">リール</span>の件数・<span class="nobreak">コメント</span>の対象期間・1<span class="nobreak">リール</span>あたりの確認件数は<span class="nobreak">アプリ画面</span>から変更できます。特定<span class="nobreak">リール</span>への限定・<span class="nobreak">キーワード</span>・<span class="nobreak">文字数上限</span>は<span class="nobreak">設定ファイル</span>（<span class="nobreak">config.json</span>）で指定します。</p>
+        <p>確認するリールの件数、何時間前までのコメントを対象にするか、1リールあたり何件まで確認するかを、アプリの画面から設定できます。</p>
       </div>
       <div class="card">
         <span class="emoji">🔁</span>
         <h3>二重返信の防止</h3>
-        <p>一度返信した<span class="nobreak">コメント</span>は記録され、同じ<span class="nobreak">コメント</span>に重複して返信することはありません。自分の<span class="nobreak">コメント</span>にも返信しません。</p>
+        <p>一度返信したコメントは記録され、同じコメントに重複して返信することはありません。自分のコメントにも返信しません。</p>
       </div>
       <div class="card">
         <span class="emoji">⏱️</span>
         <h3>API制限への配慮</h3>
-        <p><span class="nobreak">レート制限</span>（<span class="nobreak">HTTP 429</span> や<span class="nobreak">Meta</span>の<span class="nobreak">レート制限エラー</span>）を検出すると<span class="nobreak">Retry-After</span>を尊重しつつ<span class="nobreak">指数バックオフ</span>し、<span class="nobreak">API使用量</span>がしきい値（既定<span class="nobreak">90%</span>）を超えると送信を自動で一時停止します。</p>
+        <p>レート制限（HTTP 429 やMetaのレート制限エラー）を検出するとRetry-Afterを尊重しつつ指数バックオフし、API使用量がしきい値（既定90%）を超えると送信を自動で一時停止します。</p>
       </div>
     </div>
   </section>
@@ -449,12 +449,12 @@
   <section class="reveal">
     <h2>使い方</h2>
     <ol class="steps">
-      <li><strong>アプリをインストール</strong> — 上のダウンロードボタンを押すと、お使いの<span class="nobreak">OS</span>に合った<span class="nobreak">インストーラー</span> (<span class="nobreak">macOS</span>: <code>.dmg</code> / <span class="nobreak">Windows</span>: <code>.msi</code>) がダウンロードされます。<span class="nobreak">macOS</span>で「"<span class="nobreak">Instagram CRM.app</span>"は壊れているため開けません」と表示される場合は、<span class="nobreak">Apple未公証</span>のアプリを<span class="nobreak">ブラウザ経由</span>でダウンロードした際に<span class="nobreak">macOS</span>が表示する既知の警告です。<span class="nobreak">ターミナル</span>で以下を実行してから開いてください。<br><code>xattr -cr "/Applications/Instagram CRM.app"</code></li>
-      <li><strong>Metaのアクセストークンを発行</strong> — <span class="nobreak">Instagram</span>の<span class="nobreak">プロアカウント</span>（<span class="nobreak">ビジネス</span>/<span class="nobreak">クリエイター</span>）が必要です。手順は <a href="https://github.com/kenshin-morioka/instagram-crm/blob/main/docs/META_SETUP.md">META_SETUP.md</a> を参照してください。</li>
-      <li><strong>アプリと連携</strong> — 発行した<span class="nobreak">トークン</span>をアプリに貼り付けて「<span class="nobreak">連携する</span>」を押します。</li>
-      <li><strong>返信文を保存</strong> — 自動返信で送る<span class="nobreak">定型文</span>を入力して保存します。未設定のままでは<span class="nobreak">自動返信</span>は動きません。</li>
-      <li><strong>ドライランで動作確認</strong> — しばらく動かし、返信対象が意図どおりか<span class="nobreak">ログ</span>で確認します。</li>
-      <li><strong>実送信を開始</strong> — 確認できたら「<span class="nobreak">実送信を開始する</span>」ボタンを押して、実際の返信を始めます。</li>
+      <li><strong>アプリをインストール</strong> — 上のダウンロードボタンを押すと、お使いのOSに合った<span class="nobreak">インストーラー</span> (macOS: <code>.dmg</code> / Windows: <code>.msi</code>) がダウンロードされます。macOSで「"Instagram CRM.app"は壊れているため開けません」と表示される場合は、Apple未公証のアプリをブラウザ経由でダウンロードした際にmacOSが表示する既知の警告です。<span class="nobreak">ターミナル</span>で以下を実行してから開いてください。<br><code>xattr -cr "/Applications/Instagram CRM.app"</code></li>
+      <li><strong>Metaの<span class="nobreak">アクセストークン</span>を発行</strong> — Instagramの<span class="nobreak">プロアカウント</span>（ビジネス/<span class="nobreak">クリエイター）</span>が必要です。手順は <a href="https://github.com/kenshin-morioka/instagram-crm/blob/main/docs/META_SETUP.md">META_SETUP.md</a> を参照してください。</li>
+      <li><strong>アプリと連携</strong> — 発行した<span class="nobreak">トークン</span>をアプリに貼り付けて「連携する」を押します。</li>
+      <li><strong>返信文を保存</strong> — 自動返信で送る定型文を入力して保存します。未設定のままでは自動返信は動きません。</li>
+      <li><strong><span class="nobreak">ドライラン</span>で動作確認</strong> — しばらく動かし、返信対象が意図どおりかログで確認します。</li>
+      <li><strong>実送信を開始</strong> — 確認できたら「実送信を開始する」ボタンを押して、実際の返信を始めます。</li>
     </ol>
   </section>
 
@@ -462,18 +462,17 @@
     <h2>安全性について</h2>
     <ul>
       <li>要求する権限は<span class="nobreak">コメント</span>の取得・返信に必要な2つのみ<br><code>instagram_business_basic</code>, <code>instagram_business_manage_comments</code></li>
-      <li><span class="nobreak">トークン</span>の実値・<span class="nobreak">コメント本文</span>・<span class="nobreak">ユーザー名</span>は<span class="nobreak">ログ</span>に出力しません</li>
-      <li>送信をすぐ止めたいときは「<span class="nobreak">送信を一時停止</span>」ボタンで新規送信を停止できます</li>
-      <li>第三者が参照できる<span class="nobreak">静的レビュー</span>（<span class="nobreak">規約準拠</span>の観点）の結果は <a href="https://github.com/kenshin-morioka/instagram-crm/blob/main/docs/COMPLIANCE_AUDIT.md">COMPLIANCE_AUDIT.md</a> で公開しています</li>
+      <li><span class="nobreak">トークン</span>の実値・<span class="nobreak">コメント本文・</span><span class="nobreak">ユーザー名</span>はログに出力しません</li>
+      <li>送信をすぐ止めたいときは「送信を一時停止」ボタンで新規送信を停止できます</li>
+      <li>第三者が参照できる静的レビュー（規約準拠の観点）の結果は <a href="https://github.com/kenshin-morioka/instagram-crm/blob/main/docs/COMPLIANCE_AUDIT.md">COMPLIANCE_AUDIT.md</a> で公開しています</li>
     </ul>
   </section>
 
   <section class="reveal">
-    <h2>フィードバック歓迎</h2>
+    <h2><span class="nobreak">フィードバック</span>歓迎</h2>
     <p>
-      このアプリは<span class="nobreak">OSS</span>として公開しています。<span class="nobreak">バグ報告</span>・<span class="nobreak">機能要望</span>・使い方の相談など、どんなことでも
-      <a href="https://github.com/kenshin-morioka/instagram-crm/issues">Issue</a> を立ててください。
-      <span class="nobreak">プルリクエスト</span>も歓迎します。
+      このアプリはOSSとして公開しています。バグ報告・機能要望・使い方の相談など、どんなことでも
+      <a href="https://github.com/kenshin-morioka/instagram-crm/issues">Issue</a> を立ててください。<span class="nobreak">プルリクエスト</span>も歓迎します。
     </p>
   </section>
 
@@ -487,7 +486,7 @@
     ·
     <a href="https://github.com/kenshin-morioka/instagram-crm/issues">Issues</a>
     ·
-    <a href="privacy.html">プライバシーポリシー</a>
+    <a href="privacy.html"><span class="nobreak">プライバシーポリシー</span></a>
     ·
     <a href="terms.html">利用規約</a>
   </p>
