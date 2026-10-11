@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   assign:
+    if: github.event.pull_request.user.type != 'Bot'
     runs-on: ubuntu-latest
     steps:
       - name: Assign PR author as assignee
