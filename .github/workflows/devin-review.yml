@@ -1,0 +1,35 @@
+# Dependabot / Devin が作成した PR に Devin Review を実行する
+# これらの bot の PR は CodeRabbit がレビューしない (bot 用シートが有料) ため、その代替。
+# 人間が作成した PR は CodeRabbit がレビューするので対象外 (Devin のコスト削減)
+#
+# 必要な設定:
+# - DEVIN_API_KEY: UseReviewManual 権限を持つ Devin のサービスユーザー API キー (cog_...)
+#   Dependabot がトリガーしたワークフローは Dependabot secrets しか参照できないため、
+#   Actions secrets と Dependabot secrets の両方に登録すること
+name: Devin Review
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+permissions: {}
+
+jobs:
+  review:
+    if: >-
+      !github.event.pull_request.draft &&
+      contains(fromJSON('["dependabot[bot]", "devin-ai-integration[bot]"]'), github.event.pull_request.user.login)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Devin Review
+        env:
+          DEVIN_API_KEY: ${{ secrets.DEVIN_API_KEY }}
+          DEVIN_ORG_ID: org-eb976e0d29e040b5ae8ec150eca7ed98
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          jq -n --arg pr_url "$PR_URL" '{pr_url: $pr_url}' |
+            curl --silent --show-error --fail-with-body \
+              -X POST "https://api.devin.ai/v3/organizations/${DEVIN_ORG_ID}/pr-reviews" \
+              -H "Authorization: Bearer ${DEVIN_API_KEY}" \
+              -H "Content-Type: application/json" \
+              --data @-
